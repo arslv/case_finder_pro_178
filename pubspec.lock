@@ -760,11 +760,9 @@ packages:
   uwb:
     dependency: "direct main"
     description:
-      path: "src/uwb"
-      ref: HEAD
-      resolved-ref: "55ed31575f89013157b6897139ff11b6ea890bc9"
-      url: "https://github.com/ChristianGreiner/masterthesis.git"
-    source: git
+      path: uwb_plugin
+      relative: true
+    source: path
     version: "1.0.0"
   vector_graphics:
     dependency: transitive

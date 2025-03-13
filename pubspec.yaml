@@ -24,14 +24,17 @@ dependencies:
   meta: ^1.0.0
   plugin_platform_interface: ^2.0.2
 
+  uwb:
+    path: ./uwb_plugin
+
 #  plugin_platform_interface: ^2.0.2
 #  uwb:
 #    path: tdlib/core/package/uwb
 
-  uwb:
-    git:
-      url: https://github.com/ChristianGreiner/masterthesis.git
-      path: src/uwb
+#  uwb:
+#    git:
+#      url: https://github.com/ChristianGreiner/masterthesis.git
+#      path: src/uwb
 
 dev_dependencies:
   flutter_test:

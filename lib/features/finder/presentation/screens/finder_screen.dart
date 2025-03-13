@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:pod_finder_pro_178/core/package/uwb/lib/flutter_uwb.dart';
 import 'package:pod_finder_pro_178/core/widgets/app_bar.dart';
 import 'package:pod_finder_pro_178/core/widgets/app_button.dart';
 import 'package:pod_finder_pro_178/features/finder/presentation/widgets/search_animation.dart';
+import 'package:uwb/flutter_uwb.dart';
 
 class FinderScreen extends StatefulWidget {
   const FinderScreen({super.key});
@@ -25,8 +25,9 @@ class _FinderScreenState extends State<FinderScreen> {
   Future<void> _initUwb() async {
     try {
       final isSupported = await _uwbPlugin.isUwbSupported();
+      print('ISSUP: $isSupported');
       if (isSupported) {
-        _startSearch();
+        // _startSearch();
       }
     } catch (e) {
       print(e);
@@ -64,7 +65,7 @@ class _FinderScreenState extends State<FinderScreen> {
               padding: const EdgeInsets.all(16),
               child: AppButton(
                 text: _isSearching ? 'Stop Search' : 'Start Search',
-                onPressed: _isSearching ? _stopSearch : _startSearch,
+                onPressed: _isSearching ? _stopSearch : _initUwb,
               ),
             ),
           ],
