@@ -18,9 +18,20 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   modal_bottom_sheet: ^3.0.0-pre
+
+  collection: ^1.0.0
+  ffi: ^2.0.0
+  meta: ^1.0.0
   plugin_platform_interface: ^2.0.2
+
+#  plugin_platform_interface: ^2.0.2
+#  uwb:
+#    path: tdlib/core/package/uwb
+
   uwb:
-    path: lib/core/package/uwb
+    git:
+      url: https://github.com/ChristianGreiner/masterthesis.git
+      path: src/uwb
 
 dev_dependencies:
   flutter_test:

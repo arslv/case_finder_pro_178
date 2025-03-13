@@ -8,9 +8,11 @@ import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'features/main/presentation/bloc/main_screen_bloc.dart';
 import 'features/onboarding/presentation/bloc/onboarding_bloc.dart';
+import 'core/di/service_locator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ServiceLocator.init();
   await _init();
   runApp(const MyApp());
 }

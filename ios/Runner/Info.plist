@@ -4,9 +4,9 @@
 <dict>
 <!-- Required by Multipeer Connectivity -->
 <key>NSBluetoothAlwaysUsageDescription</key>
-<string>your usage description</string>
+<string>Need BLE permission to find nearby devices</string>
 <key>NSBluetoothPeripheralUsageDescription</key>
-<string>your usage description</string>
+<string>Need BLE permission to find nearby devices</string>
 <key>NSBonjourServices</key>
 <array>
     <string>_uwbexample._tcp</string>
@@ -19,7 +19,7 @@
 <key>NSNearbyInteractionAllowOnceUsageDescription</key>
 <string>your usage description</string>
 <key>NSNearbyInteractionUsageDescription</key>
-<string>your usage description</string>
+<string>This app needs access to Nearby Interactions to find and connect with nearby devices.</string>
 
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>

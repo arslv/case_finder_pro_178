@@ -16,7 +16,7 @@
     <!-- Feature declarations -->
     <uses-feature
         android:name="android.hardware.uwb"
-        android:required="false" />
+        android:required="true" />
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="true" />

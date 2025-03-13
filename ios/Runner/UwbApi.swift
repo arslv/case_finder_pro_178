@@ -150,7 +150,7 @@ class UwbHostApiSetup {
   static var codec: FlutterStandardMessageCodec { UwbHostApiCodec.shared }
   /// Sets up an instance of `UwbHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: UwbHostApi?) {
-    let isUwbSupportedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.uwb.UwbHostApi.isUwbSupported", binaryMessenger: binaryMessenger, codec: codec)
+    let isUwbSupportedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.isUwbSupported", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       isUwbSupportedChannel.setMessageHandler { _, reply in
         do {
@@ -163,7 +163,7 @@ class UwbHostApiSetup {
     } else {
       isUwbSupportedChannel.setMessageHandler(nil)
     }
-    let startDiscoveryChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.uwb.UwbHostApi.startDiscovery", binaryMessenger: binaryMessenger, codec: codec)
+    let startDiscoveryChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.startDiscovery", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       startDiscoveryChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -178,7 +178,7 @@ class UwbHostApiSetup {
     } else {
       startDiscoveryChannel.setMessageHandler(nil)
     }
-    let stopDiscoveryChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.uwb.UwbHostApi.stopDiscovery", binaryMessenger: binaryMessenger, codec: codec)
+    let stopDiscoveryChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.stopDiscovery", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       stopDiscoveryChannel.setMessageHandler { _, reply in
         do {
@@ -191,7 +191,7 @@ class UwbHostApiSetup {
     } else {
       stopDiscoveryChannel.setMessageHandler(nil)
     }
-    let startRangingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.uwb.UwbHostApi.startRanging", binaryMessenger: binaryMessenger, codec: codec)
+    let startRangingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.startRanging", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       startRangingChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -206,7 +206,7 @@ class UwbHostApiSetup {
     } else {
       startRangingChannel.setMessageHandler(nil)
     }
-    let stopRangingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.uwb.UwbHostApi.stopRanging", binaryMessenger: binaryMessenger, codec: codec)
+    let stopRangingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.stopRanging", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       stopRangingChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -221,7 +221,7 @@ class UwbHostApiSetup {
     } else {
       stopRangingChannel.setMessageHandler(nil)
     }
-    let handleConnectionRequestChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.uwb.UwbHostApi.handleConnectionRequest", binaryMessenger: binaryMessenger, codec: codec)
+    let handleConnectionRequestChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.handleConnectionRequest", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       handleConnectionRequestChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -295,7 +295,7 @@ class UwbFlutterApi: UwbFlutterApiProtocol {
     return UwbFlutterApiCodec.shared
   }
   func onDiscoveryDeviceFound(device deviceArg: UwbDevice, completion: @escaping (Result<Void, FlutterError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryDeviceFound"
+    let channelName: String = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryDeviceFound"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([deviceArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {
@@ -313,7 +313,7 @@ class UwbFlutterApi: UwbFlutterApiProtocol {
     }
   }
   func onDiscoveryDeviceLost(device deviceArg: UwbDevice, completion: @escaping (Result<Void, FlutterError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryDeviceLost"
+    let channelName: String = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryDeviceLost"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([deviceArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {
@@ -331,7 +331,7 @@ class UwbFlutterApi: UwbFlutterApiProtocol {
     }
   }
   func onDiscoveryDeviceConnected(device deviceArg: UwbDevice, completion: @escaping (Result<Void, FlutterError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryDeviceConnected"
+    let channelName: String = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryDeviceConnected"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([deviceArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {
@@ -349,7 +349,7 @@ class UwbFlutterApi: UwbFlutterApiProtocol {
     }
   }
   func onDiscoveryDeviceDisconnected(device deviceArg: UwbDevice, completion: @escaping (Result<Void, FlutterError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryDeviceDisconnected"
+    let channelName: String = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryDeviceDisconnected"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([deviceArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {
@@ -367,7 +367,7 @@ class UwbFlutterApi: UwbFlutterApiProtocol {
     }
   }
   func onDiscoveryDeviceRejected(device deviceArg: UwbDevice, completion: @escaping (Result<Void, FlutterError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryDeviceRejected"
+    let channelName: String = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryDeviceRejected"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([deviceArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {
@@ -385,7 +385,7 @@ class UwbFlutterApi: UwbFlutterApiProtocol {
     }
   }
   func onDiscoveryConnectionRequestReceived(device deviceArg: UwbDevice, completion: @escaping (Result<Void, FlutterError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryConnectionRequestReceived"
+    let channelName: String = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryConnectionRequestReceived"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([deviceArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {
@@ -403,7 +403,7 @@ class UwbFlutterApi: UwbFlutterApiProtocol {
     }
   }
   func onUwbSessionStarted(device deviceArg: UwbDevice, completion: @escaping (Result<Void, FlutterError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.uwb.UwbFlutterApi.onUwbSessionStarted"
+    let channelName: String = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onUwbSessionStarted"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([deviceArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {
@@ -421,7 +421,7 @@ class UwbFlutterApi: UwbFlutterApiProtocol {
     }
   }
   func onUwbSessionDisconnected(device deviceArg: UwbDevice, completion: @escaping (Result<Void, FlutterError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.uwb.UwbFlutterApi.onUwbSessionDisconnected"
+    let channelName: String = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onUwbSessionDisconnected"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([deviceArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {

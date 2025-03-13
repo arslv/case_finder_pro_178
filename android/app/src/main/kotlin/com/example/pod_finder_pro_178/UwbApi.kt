@@ -146,7 +146,7 @@ interface UwbHostApi {
     @Suppress("UNCHECKED_CAST")
     fun setUp(binaryMessenger: BinaryMessenger, api: UwbHostApi?) {
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.uwb.UwbHostApi.isUwbSupported", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.isUwbSupported", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             var wrapped: List<Any?>
@@ -162,7 +162,7 @@ interface UwbHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.uwb.UwbHostApi.startDiscovery", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.startDiscovery", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -181,7 +181,7 @@ interface UwbHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.uwb.UwbHostApi.stopDiscovery", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.stopDiscovery", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             var wrapped: List<Any?>
@@ -198,7 +198,7 @@ interface UwbHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.uwb.UwbHostApi.startRanging", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.startRanging", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -217,7 +217,7 @@ interface UwbHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.uwb.UwbHostApi.stopRanging", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.stopRanging", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -236,7 +236,7 @@ interface UwbHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.uwb.UwbHostApi.handleConnectionRequest", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pod_finder_pro_178.UwbHostApi.handleConnectionRequest", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -292,7 +292,7 @@ class UwbFlutterApi(private val binaryMessenger: BinaryMessenger) {
   }
   fun onDiscoveryDeviceFound(deviceArg: UwbDevice, callback: (Result<Unit>) -> Unit)
 {
-    val channelName = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryDeviceFound"
+    val channelName = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryDeviceFound"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(deviceArg)) {
       if (it is List<*>) {
@@ -308,7 +308,7 @@ class UwbFlutterApi(private val binaryMessenger: BinaryMessenger) {
   }
   fun onDiscoveryDeviceLost(deviceArg: UwbDevice, callback: (Result<Unit>) -> Unit)
 {
-    val channelName = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryDeviceLost"
+    val channelName = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryDeviceLost"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(deviceArg)) {
       if (it is List<*>) {
@@ -324,7 +324,7 @@ class UwbFlutterApi(private val binaryMessenger: BinaryMessenger) {
   }
   fun onDiscoveryDeviceConnected(deviceArg: UwbDevice, callback: (Result<Unit>) -> Unit)
 {
-    val channelName = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryDeviceConnected"
+    val channelName = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryDeviceConnected"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(deviceArg)) {
       if (it is List<*>) {
@@ -340,7 +340,7 @@ class UwbFlutterApi(private val binaryMessenger: BinaryMessenger) {
   }
   fun onDiscoveryDeviceDisconnected(deviceArg: UwbDevice, callback: (Result<Unit>) -> Unit)
 {
-    val channelName = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryDeviceDisconnected"
+    val channelName = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryDeviceDisconnected"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(deviceArg)) {
       if (it is List<*>) {
@@ -356,7 +356,7 @@ class UwbFlutterApi(private val binaryMessenger: BinaryMessenger) {
   }
   fun onDiscoveryDeviceRejected(deviceArg: UwbDevice, callback: (Result<Unit>) -> Unit)
 {
-    val channelName = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryDeviceRejected"
+    val channelName = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryDeviceRejected"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(deviceArg)) {
       if (it is List<*>) {
@@ -372,7 +372,7 @@ class UwbFlutterApi(private val binaryMessenger: BinaryMessenger) {
   }
   fun onDiscoveryConnectionRequestReceived(deviceArg: UwbDevice, callback: (Result<Unit>) -> Unit)
 {
-    val channelName = "dev.flutter.pigeon.uwb.UwbFlutterApi.onDiscoveryConnectionRequestReceived"
+    val channelName = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onDiscoveryConnectionRequestReceived"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(deviceArg)) {
       if (it is List<*>) {
@@ -388,7 +388,7 @@ class UwbFlutterApi(private val binaryMessenger: BinaryMessenger) {
   }
   fun onUwbSessionStarted(deviceArg: UwbDevice, callback: (Result<Unit>) -> Unit)
 {
-    val channelName = "dev.flutter.pigeon.uwb.UwbFlutterApi.onUwbSessionStarted"
+    val channelName = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onUwbSessionStarted"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(deviceArg)) {
       if (it is List<*>) {
@@ -404,7 +404,7 @@ class UwbFlutterApi(private val binaryMessenger: BinaryMessenger) {
   }
   fun onUwbSessionDisconnected(deviceArg: UwbDevice, callback: (Result<Unit>) -> Unit)
 {
-    val channelName = "dev.flutter.pigeon.uwb.UwbFlutterApi.onUwbSessionDisconnected"
+    val channelName = "dev.flutter.pigeon.pod_finder_pro_178.UwbFlutterApi.onUwbSessionDisconnected"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(deviceArg)) {
       if (it is List<*>) {

@@ -159,7 +159,7 @@ packages:
     source: hosted
     version: "4.10.1"
   collection:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: collection
       sha256: "2f5709ae4d3d59dd8f7cd309b4e023046b57d8a6c82130785d2b0e5868084e76"
@@ -231,7 +231,7 @@ packages:
     source: hosted
     version: "1.3.2"
   ffi:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: ffi
       sha256: "289279317b4b16eb2bb7e271abccd4bf84ec9bdcbe999e278a94b804f5630418"
@@ -481,7 +481,7 @@ packages:
     source: hosted
     version: "0.11.1"
   meta:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: meta
       sha256: e3641ec5d63ebf0d9b41bd43201a66e3fc79a65db5f61fc181f04cd27aab950c
@@ -757,6 +757,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  uwb:
+    dependency: "direct main"
+    description:
+      path: "src/uwb"
+      ref: HEAD
+      resolved-ref: "55ed31575f89013157b6897139ff11b6ea890bc9"
+      url: "https://github.com/ChristianGreiner/masterthesis.git"
+    source: git
+    version: "1.0.0"
   vector_graphics:
     dependency: transitive
     description:
