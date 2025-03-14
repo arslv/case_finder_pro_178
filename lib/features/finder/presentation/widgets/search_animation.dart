@@ -21,14 +21,13 @@ class _SearchAnimationState extends State<SearchAnimation> with SingleTickerProv
       vsync: this,
     )..repeat();
 
-    // Создаем 3 анимации для волн с разными задержками
     for (int i = 0; i < 3; i++) {
       _animations.add(
         Tween<double>(begin: 0.0, end: 1.0).animate(
           CurvedAnimation(
             parent: _controller,
             curve: Interval(
-              i * 0.3, // Задержка для каждой волны
+              i * 0.3,
               1.0,
               curve: Curves.easeOut,
             ),

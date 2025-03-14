@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.6.1
+  sdk: ^3.6.0
 
 dependencies:
   flutter:
@@ -18,23 +18,14 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   modal_bottom_sheet: ^3.0.0-pre
-
+  flutter_blue_plus: ^1.35.3
   collection: ^1.0.0
   ffi: ^2.0.0
   meta: ^1.0.0
   plugin_platform_interface: ^2.0.2
-
   uwb:
     path: ./uwb_plugin
 
-#  plugin_platform_interface: ^2.0.2
-#  uwb:
-#    path: tdlib/core/package/uwb
-
-#  uwb:
-#    git:
-#      url: https://github.com/ChristianGreiner/masterthesis.git
-#      path: src/uwb
 
 dev_dependencies:
   flutter_test:
@@ -43,6 +34,7 @@ dev_dependencies:
   flutter_gen_runner: ^5.4.0
   build_runner: ^2.4.8
   pigeon: ^17.2.0
+  pigeon_build_runner:
 
 flutter:
   uses-material-design: true
