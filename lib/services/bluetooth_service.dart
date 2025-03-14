@@ -22,9 +22,7 @@ class AppBluetoothService {
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
 
-  // Инициализация сервиса
   Future<void> initialize() async {
-    // Слушаем состояние Bluetooth адаптера
     _adapterStateSubscription = FlutterBluePlus.adapterState.listen((state) {
       debugPrint('Bluetooth adapter state: $state');
       if (state != BluetoothAdapterState.on && _isScanning) {
@@ -32,22 +30,18 @@ class AppBluetoothService {
       }
     });
 
-    // Слушаем результаты сканирования
     _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
       _scanResults = results;
       // Сортируем по силе сигнала (RSSI)
       _scanResults.sort((a, b) => b.rssi.compareTo(a.rssi));
-      
-      // Отправляем обновленные результаты в стрим
+
       _devicesStreamController.add(_scanResults);
-      
-      // Логируем найденные устройства
+
       debugPrint('Found devices: ${results.length}');
       for (ScanResult r in results) {
         final name = r.device.platformName.isNotEmpty ? r.device.platformName : "Unnamed";
         debugPrint('$name (${r.device.remoteId}): RSSI: ${r.rssi}');
-        
-        // Выводим данные производителя (особенно важно для устройств Apple)
+
         if (r.advertisementData.manufacturerData.isNotEmpty) {
           debugPrint('  Manufacturer Data: ${_formatManufacturerData(r.advertisementData.manufacturerData)}');
         }
@@ -55,7 +49,6 @@ class AppBluetoothService {
     });
   }
 
-  // Начать сканирование
   Future<void> startScan({Duration? timeout}) async {
     if (_isScanning) return;
     
@@ -66,8 +59,7 @@ class AppBluetoothService {
       _devicesStreamController.add(_scanResults);
       
       debugPrint('Starting Bluetooth scan...');
-      
-      // Запускаем сканирование
+
       await FlutterBluePlus.startScan(
         timeout: timeout ?? const Duration(seconds: 30),
         androidUsesFineLocation: true,
@@ -81,7 +73,6 @@ class AppBluetoothService {
     }
   }
 
-  // Остановить сканирование
   Future<void> stopScan() async {
     if (!_isScanning) return;
     
@@ -90,7 +81,6 @@ class AppBluetoothService {
     debugPrint('Bluetooth scan stopped');
   }
 
-  // Подключиться к устройству
   Future<void> connectToDevice(BluetoothDevice device) async {
     try {
       debugPrint('Connecting to device: ${device.platformName}');
@@ -102,7 +92,6 @@ class AppBluetoothService {
     }
   }
 
-  // Отключиться от устройства
   Future<void> disconnectFromDevice(BluetoothDevice device) async {
     try {
       debugPrint('Disconnecting from device: ${device.platformName}');
@@ -114,7 +103,6 @@ class AppBluetoothService {
     }
   }
 
-  // Получить устройство по ID
   BluetoothDevice? getDeviceById(String id) {
     try {
       return _scanResults.firstWhere((result) => 
@@ -124,7 +112,6 @@ class AppBluetoothService {
     }
   }
 
-  // Проверить, является ли устройство устройством Apple
   bool isAppleDevice(ScanResult result) {
     // Apple Company ID = 76 (0x004C)
     return result.advertisementData.manufacturerData.containsKey(76);
@@ -165,7 +152,6 @@ class AppBluetoothService {
     return a > 0 ? exp(b * log(a)) : 0;
   }
 
-  // Освобождение ресурсов
   void dispose() {
     _scanSubscription?.cancel();
     _adapterStateSubscription?.cancel();

@@ -1,186 +1,99 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
-import '../../../../core/device/device_interface.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'dart:math';
+import 'package:flutter/material.dart';
+import '../../../../core/models/device.dart';
 
 class DeviceList extends StatelessWidget {
   final List<Device> devices;
-  final Function(Device) onDeviceSelected;
-  final Device? connectedDevice;
-  final bool isConnecting;
-
+  
   const DeviceList({
-    super.key,
+    Key? key,
     required this.devices,
-    required this.onDeviceSelected,
-    this.connectedDevice,
-    this.isConnecting = false,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    if (devices.isEmpty) {
-      return const Center(
-        child: Text(
-          'No devices found',
-          style: TextStyle(
-            color: CupertinoColors.systemGrey,
-            fontSize: 16,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Found ${devices.length} device${devices.length == 1 ? '' : 's'}',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: devices.length,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemBuilder: (context, index) {
-        final device = devices[index];
-        final isConnected = connectedDevice?.id == device.id;
-        
-        return DeviceListItem(
-          device: device,
-          isConnected: isConnected,
-          isConnecting: isConnecting && connectedDevice?.id == device.id,
-          onTap: () {
-            HapticFeedback.selectionClick();
-            onDeviceSelected(device);
-          },
-        );
-      },
+        Expanded(
+          child: ListView.builder(
+            itemCount: devices.length,
+            itemBuilder: (context, index) {
+              final device = devices[index];
+              return DeviceListItem(device: device);
+            },
+          ),
+        ),
+      ],
     );
   }
 }
 
 class DeviceListItem extends StatelessWidget {
   final Device device;
-  final bool isConnected;
-  final bool isConnecting;
-  final VoidCallback onTap;
-
+  
   const DeviceListItem({
-    super.key,
+    Key? key,
     required this.device,
-    required this.isConnected,
-    required this.isConnecting,
-    required this.onTap,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isConnected ? AppColors.primary.withOpacity(0.1) : null,
-          border: Border(
-            bottom: BorderSide(
-              color: CupertinoColors.separator,
-              width: 0.5,
-            ),
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        leading: _buildLeadingIcon(),
+        title: Text(
+          device.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
           ),
         ),
-        child: Row(
-          children: [
-            _buildDeviceIcon(),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    device.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: CupertinoColors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _getDeviceStatusText(),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isConnected ? AppColors.primary : CupertinoColors.systemGrey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (device.distance != null)
-              Text(
+        subtitle: Text(
+          'ID: ${device.id.substring(0, min(8, device.id.length))}...',
+        ),
+        trailing: device.distance != null
+            ? Text(
                 '${device.distance!.toStringAsFixed(1)} m',
                 style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: CupertinoColors.systemGrey,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
-            const SizedBox(width: 8),
-            if (isConnecting)
-              const CupertinoActivityIndicator()
-            else
-              Icon(
-                isConnected ? CupertinoIcons.check_mark_circled_solid : CupertinoIcons.chevron_right,
-                color: isConnected ? AppColors.primary : CupertinoColors.systemGrey,
-                size: 20,
-              ),
-          ],
-        ),
+              )
+            : null,
       ),
     );
   }
 
-  Widget _buildDeviceIcon() {
+  Widget _buildLeadingIcon() {
     IconData iconData;
+    Color iconColor;
     
-    switch (device.type) {
-      case DeviceType.smartphone:
-        iconData = CupertinoIcons.device_phone_portrait;
+    switch (device.source) {
+      case DeviceSource.bluetooth:
+        iconData = Icons.bluetooth;
+        iconColor = Colors.blue;
         break;
-      case DeviceType.watch:
-        iconData = CupertinoIcons.app_fill;
-        break;
-      case DeviceType.tablet:
-        iconData = CupertinoIcons.device_phone_landscape;
-        break;
-      case DeviceType.headphones:
-        iconData = CupertinoIcons.headphones;
-        break;
-      case DeviceType.other:
-      default:
-        iconData = CupertinoIcons.nosign;
+      case DeviceSource.uwb:
+        iconData = Icons.wifi_tethering;
+        iconColor = Colors.green;
         break;
     }
     
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: AppColors.featuresBg,
-        borderRadius: BorderRadius.circular(20),
-      ),
+    return CircleAvatar(
+      backgroundColor: iconColor.withOpacity(0.1),
       child: Icon(
         iconData,
-        color: isConnected ? AppColors.primary : CupertinoColors.systemGrey,
-        size: 20,
+        color: iconColor,
       ),
     );
   }
-
-  String _getDeviceStatusText() {
-    switch (device.status) {
-      case ConnectionStatus.connected:
-        return 'Connected';
-      case ConnectionStatus.connecting:
-        return 'Connecting...';
-      case ConnectionStatus.ranging:
-        return 'Ranging';
-      case ConnectionStatus.disconnected:
-      default:
-        return 'Tap to connect';
-    }
-  }
-} 
+}

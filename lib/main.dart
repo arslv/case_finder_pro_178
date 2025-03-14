@@ -33,13 +33,45 @@ Future<void> generateUwbPigeonCode() async {
 
     if (await uwbPluginDir.exists()) {
       print('Генерация кода для UWB плагина...');
-
+      
+      // Предполагаем, что файл находится в lib/pigeons/uwb.dart или подобном месте
+      final pigeonFiles = [
+        'lib/pigeons/uwb.dart',
+        'pigeons/uwb.dart',
+        'lib/src/pigeons.dart',
+        'lib/pigeons.dart'
+      ];
+      
+      String? foundPigeonFile;
+      
+      for (final relativePath in pigeonFiles) {
+        final file = File('${uwbPluginDir.path}/$relativePath');
+        if (await file.exists()) {
+          foundPigeonFile = file.path;
+          break;
+        }
+      }
+      
+      if (foundPigeonFile == null) {
+        print('Файл с определениями Pigeon не найден в стандартных местах');
+        print('Выполняем поиск по всему плагину...');
+        foundPigeonFile = await _findPigeonFile(uwbPluginDir);
+      }
+      
+      if (foundPigeonFile == null) {
+        print('Файл с определениями Pigeon не найден');
+        return;
+      }
+      
+      print('Найден файл с определениями Pigeon: $foundPigeonFile');
+      
+      // Запускаем генерацию кода
       final result = await Process.run(
-        'flutter',
-        ['pub', 'run', 'pigeon:generate'],
+        'flutter', 
+        ['pub', 'run', 'pigeon', '--input', foundPigeonFile],
         workingDirectory: uwbPluginDir.path,
       );
-
+      
       if (result.exitCode == 0) {
         print('Код для UWB плагина успешно сгенерирован');
       } else {
@@ -51,6 +83,27 @@ Future<void> generateUwbPigeonCode() async {
   } catch (e) {
     print('Ошибка при генерации кода UWB: $e');
   }
+}
+
+// Функция для поиска файла с определениями Pigeon
+Future<String?> _findPigeonFile(Directory dir) async {
+  await for (final entity in dir.list(recursive: true)) {
+    if (entity is File && 
+        entity.path.endsWith('.dart') && 
+        !entity.path.contains('generated') &&
+        !entity.path.contains('.g.dart')) {
+      
+      // Проверяем содержимое файла на наличие ключевых слов Pigeon
+      final content = await entity.readAsString();
+      if (content.contains('@ConfigurePigeon') || 
+          content.contains('@HostApi()') || 
+          content.contains('@FlutterApi()')) {
+        return entity.path;
+      }
+    }
+  }
+  
+  return null;
 }
 
 class MyApp extends StatelessWidget {

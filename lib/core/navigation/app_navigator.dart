@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import '../../features/finder/presentation/screens/finder_screen.dart';
 import '../../features/main/presentation/screens/main_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'app_routes.dart';
@@ -11,16 +12,25 @@ class AppNavigator {
       case AppRoutes.onboarding:
         return CupertinoPageRoute(
           builder: (_) => const OnboardingScreen(),
+          settings: settings,
         );
       
       case AppRoutes.main:
         return CupertinoPageRoute(
           builder: (_) => MainScreen(),
+          settings: settings,
+        );
+      
+      case AppRoutes.finder:
+        return CupertinoPageRoute(
+          builder: (_) => const FinderScreen(),
+          settings: settings,
         );
       
       default:
         return CupertinoPageRoute(
           builder: (_) => const OnboardingScreen(),
+          settings: settings,
         );
     }
   }
@@ -37,5 +47,9 @@ class AppNavigator {
       AppRoutes.onboarding,
       (route) => false,
     );
+  }
+  
+  static void navigateToFinder(BuildContext context) {
+    Navigator.of(context).pushNamed(AppRoutes.finder);
   }
 } 

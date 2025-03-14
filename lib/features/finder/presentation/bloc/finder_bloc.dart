@@ -1,271 +1,146 @@
 import 'dart:async';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
-import '../../../../core/device/device_interface.dart';
-import '../../domain/repositories/device_repository.dart';
+import '../../../../core/services/device_discovery/device_discovery_manager.dart';
+import 'finder_event.dart';
+import 'finder_state.dart';
 
-// Events
-abstract class FinderEvent extends Equatable {
-  const FinderEvent();
-
-  @override
-  List<Object?> get props => [];
-}
-
-class StartDiscovery extends FinderEvent {
-  final String deviceName;
-
-  const StartDiscovery(this.deviceName);
-
-  @override
-  List<Object?> get props => [deviceName];
-}
-
-class StopDiscovery extends FinderEvent {}
-
-class ConnectToDevice extends FinderEvent {
-  final Device device;
-
-  const ConnectToDevice(this.device);
-
-  @override
-  List<Object?> get props => [device];
-}
-
-class DisconnectFromDevice extends FinderEvent {
-  final Device device;
-
-  const DisconnectFromDevice(this.device);
-
-  @override
-  List<Object?> get props => [device];
-}
-
-class DevicesUpdated extends FinderEvent {
-  final List<Device> devices;
-
-  const DevicesUpdated(this.devices);
-
-  @override
-  List<Object?> get props => [devices];
-}
-
-class DeviceStatusUpdated extends FinderEvent {
-  final Device device;
-
-  const DeviceStatusUpdated(this.device);
-
-  @override
-  List<Object?> get props => [device];
-}
-
-// States
-abstract class FinderState extends Equatable {
-  const FinderState();
-
-  @override
-  List<Object?> get props => [];
-}
-
-class FinderInitial extends FinderState {}
-
-class FinderLoading extends FinderState {}
-
-class FinderDiscovering extends FinderState {
-  final List<Device> devices;
-  final bool isConnecting;
-
-  const FinderDiscovering(this.devices, {this.isConnecting = false});
-
-  @override
-  List<Object?> get props => [devices, isConnecting];
-
-  FinderDiscovering copyWith({
-    List<Device>? devices,
-    bool? isConnecting,
-  }) {
-    return FinderDiscovering(
-      devices ?? this.devices,
-      isConnecting: isConnecting ?? this.isConnecting,
-    );
-  }
-}
-
-class FinderConnected extends FinderState {
-  final Device device;
-  final List<Device> allDevices;
-
-  const FinderConnected(this.device, this.allDevices);
-
-  @override
-  List<Object?> get props => [device, allDevices];
-}
-
-class FinderError extends FinderState {
-  final String message;
-
-  const FinderError(this.message);
-
-  @override
-  List<Object?> get props => [message];
-}
-
-// BLoC
 class FinderBloc extends Bloc<FinderEvent, FinderState> {
-  final DeviceRepository _deviceRepository;
+  final DeviceDiscoveryManager _discoveryManager;
   StreamSubscription? _devicesSubscription;
-  StreamSubscription? _deviceStatusSubscription;
-  List<Device> _currentDevices = [];
-
-  FinderBloc(this._deviceRepository) : super(FinderInitial()) {
-    on<StartDiscovery>(_onStartDiscovery);
-    on<StopDiscovery>(_onStopDiscovery);
-    on<ConnectToDevice>(_onConnectToDevice);
-    on<DisconnectFromDevice>(_onDisconnectFromDevice);
-    on<DevicesUpdated>(_onDevicesUpdated);
-    on<DeviceStatusUpdated>(_onDeviceStatusUpdated);
-
-    // Подписываемся на обновления списка устройств
-    _devicesSubscription = _deviceRepository.devicesStream.listen((devices) {
-      add(DevicesUpdated(devices));
-    });
-
-    // Подписываемся на обновления статуса устройств
-    _deviceStatusSubscription = _deviceRepository.deviceStatusStream.listen((device) {
-      add(DeviceStatusUpdated(device));
-    });
+  Timer? _shortTimeoutTimer;
+  Timer? _longTimeoutTimer;
+  
+  // Константы для таймаутов
+  static const int _shortTimeoutSeconds = 15;
+  static const int _longTimeoutSeconds = 30;
+  
+  FinderBloc({DeviceDiscoveryManager? discoveryManager}) 
+      : _discoveryManager = discoveryManager ?? DeviceDiscoveryManager(),
+        super(const FinderInitialState()) {
+    on<StartScanningEvent>(_onStartScanning);
+    on<StopScanningEvent>(_onStopScanning);
+    on<DevicesUpdatedEvent>(_onDevicesUpdated);
+    on<ScanningErrorEvent>(_onScanningError);
+    on<ScanningTimeoutEvent>(_onScanningTimeout);
   }
-
-  Future<void> _onStartDiscovery(StartDiscovery event, Emitter<FinderState> emit) async {
+  
+  Future<void> _onStartScanning(
+    StartScanningEvent event, 
+    Emitter<FinderState> emit
+  ) async {
+    emit(const FinderScanningState());
+    
     try {
-      emit(FinderLoading());
+      final isSupported = await _discoveryManager.isSupported();
       
-      // Проверяем поддержку Bluetooth/UWB
-      final isSupported = await _deviceRepository.isSupported();
       if (!isSupported) {
-        emit(const FinderError('Your device does not support Bluetooth or UWB'));
+        emit(const FinderErrorState('Bluetooth is not available on this device'));
         return;
       }
       
-      // Начинаем поиск устройств
-      await _deviceRepository.startDiscovery(event.deviceName);
+      // Подписываемся на поток устройств
+      _devicesSubscription = _discoveryManager.devicesStream.listen(
+        (devices) => add(DevicesUpdatedEvent(devices)),
+        onError: (error) => add(ScanningErrorEvent(error.toString())),
+      );
       
-      // Обновляем состояние
-      emit(FinderDiscovering(_currentDevices));
+      // Запускаем обнаружение устройств
+      await _discoveryManager.startDiscovery();
       
-      // Вибрация для обратной связи
-      HapticFeedback.mediumImpact();
+      // Устанавливаем таймеры
+      _setupTimers();
+      
     } catch (e) {
-      emit(FinderError('Failed to start discovery: ${e.toString()}'));
+      emit(FinderErrorState('Failed to start scanning: ${e.toString()}'));
     }
   }
-
-  Future<void> _onStopDiscovery(StopDiscovery event, Emitter<FinderState> emit) async {
+  
+  Future<void> _onStopScanning(
+    StopScanningEvent event, 
+    Emitter<FinderState> emit
+  ) async {
     try {
-      await _deviceRepository.stopDiscovery();
+      _cancelTimers();
+      await _discoveryManager.stopDiscovery();
+      _devicesSubscription?.cancel();
+      _devicesSubscription = null;
       
-      // Если мы подключены к устройству, сохраняем это состояние
-      if (state is FinderConnected) {
-        // Ничего не делаем, сохраняем текущее состояние
-      } else {
-        // Возвращаемся в начальное состояние
-        emit(FinderInitial());
+      if (state is FinderScanningState) {
+        emit(const FinderInitialState());
       }
-      
-      // Вибрация для обратной связи
-      HapticFeedback.mediumImpact();
     } catch (e) {
-      emit(FinderError('Failed to stop discovery: ${e.toString()}'));
+      emit(FinderErrorState('Failed to stop scanning: ${e.toString()}'));
     }
   }
-
-  Future<void> _onConnectToDevice(ConnectToDevice event, Emitter<FinderState> emit) async {
-    try {
-      // Обновляем состояние, показывая, что подключаемся
-      if (state is FinderDiscovering) {
-        emit((state as FinderDiscovering).copyWith(isConnecting: true));
-      }
+  
+  void _onDevicesUpdated(
+    DevicesUpdatedEvent event, 
+    Emitter<FinderState> emit
+  ) {
+    if (event.devices.isNotEmpty) {
+      // Если найден хотя бы один девайс, отменяем короткий таймаут
+      _shortTimeoutTimer?.cancel();
+      _shortTimeoutTimer = null;
       
-      // Подключаемся к устройству
-      await _deviceRepository.connectToDevice(event.device);
-      
-      // Вибрация для обратной связи
-      HapticFeedback.mediumImpact();
-      
-      // Обновление состояния произойдет через DeviceStatusUpdated
-    } catch (e) {
-      // Возвращаемся к состоянию поиска в случае ошибки
-      emit(FinderDiscovering(_currentDevices));
-      
-      // Показываем ошибку
-      emit(FinderError('Failed to connect: ${e.toString()}'));
-      
-      // Возвращаемся к состоянию поиска после показа ошибки
-      emit(FinderDiscovering(_currentDevices));
+      emit(FinderResultsState(event.devices));
+    } else if (state is! FinderScanningState) {
+      emit(const FinderScanningState());
     }
   }
-
-  Future<void> _onDisconnectFromDevice(DisconnectFromDevice event, Emitter<FinderState> emit) async {
-    try {
-      // Отключаемся от устройства
-      await _deviceRepository.disconnectFromDevice(event.device);
-      
-      // Возвращаемся к состоянию поиска
-      emit(FinderDiscovering(_currentDevices));
-      
-      // Вибрация для обратной связи
-      HapticFeedback.mediumImpact();
-    } catch (e) {
-      emit(FinderError('Failed to disconnect: ${e.toString()}'));
-      
-      // Возвращаемся к предыдущему состоянию после показа ошибки
-      if (state is FinderConnected) {
-        emit(FinderConnected(event.device, _currentDevices));
-      } else {
-        emit(FinderDiscovering(_currentDevices));
-      }
-    }
+  
+  void _onScanningError(
+    ScanningErrorEvent event, 
+    Emitter<FinderState> emit
+  ) {
+    _cancelTimers();
+    emit(FinderErrorState(event.message));
   }
-
-  void _onDevicesUpdated(DevicesUpdated event, Emitter<FinderState> emit) {
-    _currentDevices = event.devices;
-    
-    // Обновляем состояние только если мы в режиме поиска
-    if (state is FinderDiscovering) {
-      emit(FinderDiscovering(_currentDevices, isConnecting: (state as FinderDiscovering).isConnecting));
-    } else if (state is FinderConnected) {
-      // Если мы подключены, обновляем список всех устройств
-      final connectedDevice = (state as FinderConnected).device;
-      emit(FinderConnected(connectedDevice, _currentDevices));
-    }
-  }
-
-  void _onDeviceStatusUpdated(DeviceStatusUpdated event, Emitter<FinderState> emit) {
-    final device = event.device;
-    
-    // Обновляем устройство в списке
-    final index = _currentDevices.indexWhere((d) => d.id == device.id);
-    if (index >= 0) {
-      _currentDevices[index] = device;
-    } else {
-      _currentDevices.add(device);
-    }
-    
-    // Обновляем состояние в зависимости от статуса устройства
-    if (device.status == ConnectionStatus.connected || 
-        device.status == ConnectionStatus.ranging) {
-      emit(FinderConnected(device, _currentDevices));
-    } else if (state is FinderConnected && (state as FinderConnected).device.id == device.id) {
-      // Если мы были подключены к этому устройству, но оно отключилось
-      emit(FinderDiscovering(_currentDevices));
-    }
-  }
-
-  @override
-  Future<void> close() {
+  
+  void _onScanningTimeout(
+    ScanningTimeoutEvent event, 
+    Emitter<FinderState> emit
+  ) async {
+    await _discoveryManager.stopDiscovery();
     _devicesSubscription?.cancel();
-    _deviceStatusSubscription?.cancel();
+    _devicesSubscription = null;
+    
+    if (event.noDevicesFound) {
+      emit(const FinderErrorState('No devices found. Please try again.'));
+    } else if (state is FinderResultsState) {
+      // Если уже есть результаты, оставляем их
+    } else {
+      emit(const FinderErrorState('Scanning timed out. Please try again.'));
+    }
+  }
+  
+  void _setupTimers() {
+    _cancelTimers();
+    
+    // Короткий таймаут (15 секунд) - проверяет, найден ли хотя бы один девайс
+    _shortTimeoutTimer = Timer(Duration(seconds: _shortTimeoutSeconds), () {
+      if (state is FinderScanningState || (state is FinderResultsState && (state as FinderResultsState).devices.isEmpty)) {
+        add(const ScanningTimeoutEvent(noDevicesFound: true));
+      }
+    });
+    
+    // Длинный таймаут (30 секунд) - в любом случае завершает сканирование
+    _longTimeoutTimer = Timer(Duration(seconds: _longTimeoutSeconds), () {
+      add(const ScanningTimeoutEvent(noDevicesFound: false));
+    });
+  }
+  
+  void _cancelTimers() {
+    _shortTimeoutTimer?.cancel();
+    _shortTimeoutTimer = null;
+    _longTimeoutTimer?.cancel();
+    _longTimeoutTimer = null;
+  }
+  
+  @override
+  Future<void> close() async {
+    _cancelTimers();
+    await _devicesSubscription?.cancel();
+    await _discoveryManager.dispose();
     return super.close();
   }
 } 
