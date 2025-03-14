@@ -53,9 +53,7 @@ class BluetoothService implements DeviceInterface {
         return ConnectionStatus.connected;
       case BluetoothConnectionState.disconnecting:
         return ConnectionStatus.disconnected;
-      default:
-        return ConnectionStatus.disconnected;
-    }
+      }
   }
 
   Device _mapBluetoothDeviceToDevice(BluetoothDevice bluetoothDevice, {ScanResult? scanResult}) {
@@ -89,6 +87,7 @@ class BluetoothService implements DeviceInterface {
   @override
   Future<bool> isSupported() async {
     try {
+      print('supported bluetuth;');
       return await FlutterBluePlus.isSupported;
     } catch (e) {
       return false;
@@ -117,6 +116,7 @@ class BluetoothService implements DeviceInterface {
 
       // Подписываемся на результаты сканирования
       _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
+        print('has result');
         for (final result in results) {
           final device = _mapBluetoothDeviceToDevice(result.device, scanResult: result);
           _updateDevice(device);
@@ -132,12 +132,9 @@ class BluetoothService implements DeviceInterface {
   @override
   Future<void> stopDiscovery() async {
     try {
-      // Останавливаем сканирование, если оно активно
       if (FlutterBluePlus.isScanningNow) {
         await FlutterBluePlus.stopScan();
       }
-      
-      // Отписываемся от результатов сканирования
       _scanSubscription?.cancel();
       _scanSubscription = null;
     } catch (e) {
@@ -148,20 +145,16 @@ class BluetoothService implements DeviceInterface {
   @override
   Future<void> connect(Device device) async {
     try {
-      // Обновляем статус устройства
       final updatedDevice = device.copyWith(status: ConnectionStatus.connecting);
       _updateDevice(updatedDevice);
 
-      // Получаем BluetoothDevice из ID
       final bluetoothDevice = BluetoothDevice.fromId(device.id);
-      
-      // Подключаемся к устройству
+
       await bluetoothDevice.connect(
         timeout: const Duration(seconds: 15),
         autoConnect: false,
       );
     } catch (e) {
-      // В случае ошибки обновляем статус устройства
       final updatedDevice = device.copyWith(status: ConnectionStatus.disconnected);
       _updateDevice(updatedDevice);
       rethrow;
@@ -171,13 +164,10 @@ class BluetoothService implements DeviceInterface {
   @override
   Future<void> disconnect(Device device) async {
     try {
-      // Получаем BluetoothDevice из ID
       final bluetoothDevice = BluetoothDevice.fromId(device.id);
       
-      // Отключаемся от устройства
       await bluetoothDevice.disconnect();
       
-      // Обновляем статус устройства
       final updatedDevice = device.copyWith(status: ConnectionStatus.disconnected);
       _updateDevice(updatedDevice);
     } catch (e) {

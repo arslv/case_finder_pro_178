@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pod_finder_pro_178/features/finder/presentation/finder_screen.dart';
 import '../../../../core/navigation/nav_bar_item.dart';
 import '../../../../core/widgets/custom_nav_bar.dart';
 import '../../../finder/presentation/screens/finder_screen.dart';

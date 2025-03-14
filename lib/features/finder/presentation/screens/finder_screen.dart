@@ -47,7 +47,7 @@ class _FinderContentState extends State<FinderContent> {
 
   void _startDiscovery() async {
     HapticFeedback.selectionClick();
-    context.read<FinderBloc>().add(const StartDiscovery('My Device'));
+    context.read<FinderBloc>().add(const StartDiscovery('iPhone 12 (Арслан)'));
   }
 
   void _stopDiscovery() {

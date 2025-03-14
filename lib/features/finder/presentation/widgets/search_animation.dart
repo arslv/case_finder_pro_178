@@ -66,8 +66,8 @@ class _SearchAnimationState extends State<SearchAnimation> with SingleTickerProv
             },
           );
         }).toList(),
-        SvgPicture.asset(
-          'assets/vector/finder_logo.svg',
+        Image.asset(
+          'assets/images/finder_logo.png',
           width: 60,
           height: 60,
         ),
