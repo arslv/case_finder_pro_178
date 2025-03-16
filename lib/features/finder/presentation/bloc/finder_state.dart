@@ -9,7 +9,9 @@ class FinderInitialState extends FinderState {
 }
 
 class FinderScanningState extends FinderState {
-  const FinderScanningState();
+  final bool isReversing;
+  
+  const FinderScanningState({this.isReversing = false});
 }
 
 class FinderResultsState extends FinderState {

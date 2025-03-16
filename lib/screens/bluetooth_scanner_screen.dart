@@ -11,18 +11,18 @@ class BluetoothScannerScreen extends StatefulWidget {
 
 class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
   final AppBluetoothService _bluetoothService = AppBluetoothService();
-  
+
   @override
   void initState() {
     super.initState();
     _initializeBluetoothService();
   }
-  
+
   Future<void> _initializeBluetoothService() async {
     await _bluetoothService.initialize();
     _startScan();
   }
-  
+
   Future<void> _startScan() async {
     try {
       await _bluetoothService.startScan();
@@ -32,7 +32,7 @@ class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
       );
     }
   }
-  
+
   @override
   void dispose() {
     _bluetoothService.stopScan();
@@ -57,25 +57,28 @@ class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
             if (snapshot.hasError) {
               return Center(child: Text('Ошибка: ${snapshot.error}'));
             }
-            
+
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const Center(
-                child: Text('Устройства не найдены. Потяните вниз для обновления.'),
+                child: Text(
+                    'Устройства не найдены. Потяните вниз для обновления.'),
               );
             }
-            
+
             return ListView.builder(
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 ScanResult result = snapshot.data![index];
                 return ListTile(
                   title: Text(
-                    result.device.platformName.isNotEmpty 
-                        ? result.device.platformName 
+                    result.device.platformName.isNotEmpty
+                        ? result.device.platformName
                         : 'Unnamed Device',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: result.device.platformName.isNotEmpty ? Colors.black : Colors.grey,
+                      color: result.device.platformName.isNotEmpty
+                          ? Colors.black
+                          : Colors.grey,
                     ),
                   ),
                   subtitle: Column(
@@ -83,9 +86,13 @@ class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
                     children: [
                       Text('ID: ${result.device.remoteId}'),
                       Text('RSSI: ${result.rssi} dBm'),
-                      Text('Расстояние: ~${_bluetoothService.calculateDistance(result.rssi).toStringAsFixed(1)} м'),
+                      Text(
+                          'Расстояние: ~${_bluetoothService.calculateDistance(result.rssi).toStringAsFixed(1)} м'),
                       if (_bluetoothService.isAppleDevice(result))
-                        const Text('Apple Device', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                        const Text('Apple Device',
+                            style: TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold)),
                     ],
                   ),
                   trailing: _buildSignalStrengthIcon(result.rssi),
@@ -105,11 +112,10 @@ class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
         builder: (context, snapshot) {
           final isScanning = snapshot.data ?? false;
           return FloatingActionButton(
-            onPressed: isScanning 
-                ? _bluetoothService.stopScan 
-                : _startScan,
+            onPressed: isScanning ? _bluetoothService.stopScan : _startScan,
             child: Icon(isScanning ? Icons.stop : Icons.search),
-            tooltip: isScanning ? 'Остановить сканирование' : 'Начать сканирование',
+            tooltip:
+                isScanning ? 'Остановить сканирование' : 'Начать сканирование',
           );
         },
       ),
@@ -120,7 +126,7 @@ class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
   Widget _buildSignalStrengthIcon(int rssi) {
     IconData iconData;
     Color color;
-    
+
     if (rssi >= -60) {
       iconData = Icons.signal_cellular_4_bar;
       color = Colors.green;
@@ -137,7 +143,7 @@ class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
       iconData = Icons.signal_cellular_0_bar;
       color = Colors.red;
     }
-    
+
     return Icon(iconData, color: color);
   }
-} 
+}

@@ -28,4 +28,8 @@ class ScanningTimeoutEvent extends FinderEvent {
   final bool noDevicesFound;
   
   const ScanningTimeoutEvent({required this.noDevicesFound});
+}
+
+class AnimationReverseCompletedEvent extends FinderEvent {
+  const AnimationReverseCompletedEvent();
 } 

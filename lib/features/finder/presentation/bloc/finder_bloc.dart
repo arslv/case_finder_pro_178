@@ -22,6 +22,7 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
     on<DevicesUpdatedEvent>(_onDevicesUpdated);
     on<ScanningErrorEvent>(_onScanningError);
     on<ScanningTimeoutEvent>(_onScanningTimeout);
+    on<AnimationReverseCompletedEvent>(_onAnimationReverseCompleted);
   }
   
   Future<void> _onStartScanning(
@@ -59,17 +60,32 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
     StopScanningEvent event, 
     Emitter<FinderState> emit
   ) async {
+    _cancelTimers();
+    
+    // Сначала запускаем обратную анимацию
+    if (state is FinderScanningState) {
+      emit(const FinderScanningState(isReversing: true));
+    } else {
+      await _cleanupScanning();
+      emit(const FinderInitialState());
+    }
+  }
+  
+  void _onAnimationReverseCompleted(
+    AnimationReverseCompletedEvent event,
+    Emitter<FinderState> emit
+  ) async {
+    await _cleanupScanning();
+    emit(const FinderInitialState());
+  }
+  
+  Future<void> _cleanupScanning() async {
     try {
-      _cancelTimers();
       await _discoveryManager.stopDiscovery();
-      _devicesSubscription?.cancel();
+      await _devicesSubscription?.cancel();
       _devicesSubscription = null;
-      
-      if (state is FinderScanningState) {
-        emit(const FinderInitialState());
-      }
     } catch (e) {
-      emit(FinderErrorState('Failed to stop scanning: ${e.toString()}'));
+      // Игнорируем ошибки при очистке
     }
   }
   
@@ -93,6 +109,7 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
     Emitter<FinderState> emit
   ) {
     _cancelTimers();
+    _cleanupScanning();
     emit(FinderErrorState(event.message));
   }
   
@@ -100,9 +117,7 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
     ScanningTimeoutEvent event, 
     Emitter<FinderState> emit
   ) async {
-    await _discoveryManager.stopDiscovery();
-    _devicesSubscription?.cancel();
-    _devicesSubscription = null;
+    await _cleanupScanning();
     
     if (event.noDevicesFound) {
       emit(const FinderErrorState('No devices found. Please try again.'));
