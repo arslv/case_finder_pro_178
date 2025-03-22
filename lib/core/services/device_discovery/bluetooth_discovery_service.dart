@@ -42,14 +42,14 @@ class BluetoothDiscoveryService implements DeviceDiscoveryService {
     try {
       _isScanning = true;
       
-      // Подписываемся на результаты сканирования
       _scanResultsSubscription = FlutterBluePlus.scanResults.listen((results) {
         for (ScanResult result in results) {
+          print(result);
           final device = Device(
             id: result.device.remoteId.str,
             name: result.device.platformName.isNotEmpty 
                 ? result.device.platformName 
-                : 'Unknown Device',
+                : '${result.device.name}',
             type: DeviceType.unknown,
             source: DeviceSource.bluetooth,
             distance: _calculateDistance(result.rssi),
@@ -60,7 +60,6 @@ class BluetoothDiscoveryService implements DeviceDiscoveryService {
         }
       });
       
-      // Запускаем сканирование
       await FlutterBluePlus.startScan(
         timeout: const Duration(seconds: 30),
         androidScanMode: AndroidScanMode.lowLatency,
@@ -92,18 +91,31 @@ class BluetoothDiscoveryService implements DeviceDiscoveryService {
   }
   
   /// Приблизительный расчет расстояния на основе RSSI
-  /// Это очень приблизительная оценка, точность зависит от многих факторов
   double? _calculateDistance(int rssi) {
     if (rssi == 0) return null;
     
-    // Используем упрощенную формулу для оценки расстояния
-    // Предполагаемое значение RSSI на расстоянии 1 метр
-    const int txPower = -59; 
+    // Улучшенная формула для более точного расчета расстояния
+    // Используем модель затухания сигнала с учетом окружающей среды
     
-    if (rssi >= txPower) return 1.0;
+    // Калибровочное значение RSSI на расстоянии 1 метр (может потребоваться настройка)
+    const int txPower = -59;
     
-    // Формула: 10^((txPower - rssi)/(10 * n)), где n - коэффициент затухания (обычно 2-4)
-    const double n = 2.0;
-    return pow(10, (txPower - rssi) / (10 * n)).toDouble();
+    // Если сигнал сильнее калибровочного, значит устройство очень близко
+    if (rssi >= txPower) return 0.5;
+    
+    // Коэффициент затухания сигнала (n)
+    // 2.0 - открытое пространство
+    // 2.5-3.0 - офисное помещение с перегородками
+    // 3.0-4.0 - помещение с несколькими стенами
+    const double n = 2.5;
+    
+    // Базовая формула: 10^((txPower - rssi)/(10 * n))
+    final double rawDistance = pow(10, (txPower - rssi) / (10 * n)).toDouble();
+    
+    // Ограничиваем минимальное и максимальное значения для предотвращения выбросов
+    if (rawDistance < 0.5) return 0.5;
+    if (rawDistance > 30.0) return 30.0;
+    
+    return rawDistance;
   }
 } 

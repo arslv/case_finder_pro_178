@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pod_finder_pro_178/core/widgets/app_bar.dart';
 import 'package:pod_finder_pro_178/core/widgets/app_button.dart';
+import 'package:pod_finder_pro_178/core/widgets/pro_button.dart';
 import 'package:pod_finder_pro_178/gen/assets.gen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../bloc/finder_bloc.dart';
 import '../bloc/finder_event.dart';
 import '../bloc/finder_state.dart';
 import '../widgets/device_list.dart';
+import '../widgets/error_notification.dart';
+import '../widgets/help_panel.dart';
 import '../widgets/scanning_animation.dart';
 
 class FinderScreen extends StatelessWidget {
-  const FinderScreen({Key? key}) : super(key: key);
+  const FinderScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,22 +26,45 @@ class FinderScreen extends StatelessWidget {
 }
 
 class FinderScreenContent extends StatelessWidget {
-  const FinderScreenContent({Key? key}) : super(key: key);
+  const FinderScreenContent({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final bloc = context.read<FinderBloc>();
     return Scaffold(
-      appBar: CustomAppBar(title: 'Device finder'),
+      appBar: CustomAppBar(title: 'Finder', suffix: ProButton()),
       body: BlocBuilder<FinderBloc, FinderState>(
         builder: (context, state) {
+          if ((state is FinderInitialState && state.showHelp) ||
+              (state is FinderResultsState && state.showHelp)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              HelpPanel.show(context).then((_) {
+                if (context.mounted) {
+                  context.read<FinderBloc>().add(const HideHelpEvent());
+                }
+              });
+            });
+          }
+          
           return SafeArea(
-            child: Column(
+            child: Stack(
               children: [
-                Expanded(
-                  child: _buildContent(context, state),
+                Column(
+                  children: [
+                    Expanded(
+                      child: _buildContent(context, state),
+                    ),
+                    _buildBottomButton(context, state),
+                    const SizedBox(height: 0),
+                  ],
                 ),
-                _buildBottomButton(context, state),
-                const SizedBox(height: 20),
+                if (state is FinderInitialState &&
+                    state.showError &&
+                    bloc.errorMessage != null)
+                  ErrorNotification(
+                    message: bloc.errorMessage!,
+                    onDismiss: () => context.read<FinderBloc>().add(const ClearErrorEvent()),
+                  ),
               ],
             ),
           );
@@ -53,16 +79,19 @@ class FinderScreenContent extends StatelessWidget {
     } else if (state is FinderScanningState) {
       return ScanningAnimation(
         isReversing: state.isReversing,
-        onReverseComplete: state.isReversing 
-            ? () => context.read<FinderBloc>().add(const AnimationReverseCompletedEvent()) 
+        assetPath: Assets.images.finderLogo.path,
+        onReverseComplete: state.isReversing
+            ? () => context
+                .read<FinderBloc>()
+                .add(const AnimationReverseCompletedEvent())
             : null,
       );
     } else if (state is FinderResultsState) {
-      return DeviceList(devices: state.devices);
-    } else if (state is FinderErrorState) {
-      return _buildErrorState(context, state.message);
+      return DeviceList(
+        devices: state.devices,
+        showHelpButton: true,
+      );
     }
-
     return const SizedBox.shrink();
   }
 
@@ -73,11 +102,13 @@ class FinderScreenContent extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Tap to scan',
-                style: Theme.of(context)
-                    .textTheme
-                    .displayLarge!
-                    .copyWith(color: AppColors.primary)),
+            Text(
+              'Tap to Scan',
+              style: Theme.of(context)
+                  .textTheme
+                  .displayLarge!
+                  .copyWith(color: AppColors.primary),
+            ),
             const SizedBox(height: 30),
             Image.asset(
               Assets.images.finderLogo.path,
@@ -100,56 +131,9 @@ class FinderScreenContent extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorState(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Error',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-            ),
-            onPressed: () =>
-                context.read<FinderBloc>().add(const StartScanningEvent()),
-            child: const Text(
-              'Try Again',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBottomButton(BuildContext context, FinderState state) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 300),
       transitionBuilder: (Widget child, Animation<double> animation) {
         return FadeTransition(
           opacity: animation,
@@ -157,7 +141,10 @@ class FinderScreenContent extends StatelessWidget {
             position: Tween<Offset>(
               begin: const Offset(0, 0.2),
               end: Offset.zero,
-            ).animate(animation),
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
             child: child,
           ),
         );
@@ -174,15 +161,25 @@ class FinderScreenContent extends StatelessWidget {
           height: 16,
         );
       }
-      
-      return Padding(
-        key: const ValueKey('cancel'),
-        padding: const EdgeInsets.all(16.0),
-        child: AppButton(
-          text: 'Cancel',
-          onPressed: () =>
-              context.read<FinderBloc>().add(const StopScanningEvent()),
-        ),
+
+      return TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 400),
+        curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+        builder: (context, value, child) {
+          return Opacity(
+            opacity: value,
+            child: Padding(
+              key: const ValueKey('cancel'),
+              padding: const EdgeInsets.all(16.0),
+              child: AppButton(
+                text: 'Cancel',
+                onPressed: () => 
+                    context.read<FinderBloc>().add(const StopScanningEvent()),
+              ),
+            ),
+          );
+        },
       );
     } else if (state is FinderResultsState) {
       return Padding(

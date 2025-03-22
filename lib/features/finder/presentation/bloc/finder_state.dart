@@ -5,7 +5,13 @@ abstract class FinderState {
 }
 
 class FinderInitialState extends FinderState {
-  const FinderInitialState();
+  final bool showError;
+  final bool showHelp;
+  
+  const FinderInitialState({
+    this.showError = false,
+    this.showHelp = false,
+  });
 }
 
 class FinderScanningState extends FinderState {
@@ -16,10 +22,15 @@ class FinderScanningState extends FinderState {
 
 class FinderResultsState extends FinderState {
   final List<Device> devices;
+  final bool showHelp;
   
-  const FinderResultsState(this.devices);
+  const FinderResultsState(
+    this.devices, {
+    this.showHelp = false,
+  });
 }
 
+// This state is kept for backward compatibility but will not be used directly
 class FinderErrorState extends FinderState {
   final String message;
   

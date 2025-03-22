@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/device_discovery/device_discovery_manager.dart';
+import '../../../../core/models/device.dart';
 import 'finder_event.dart';
 import 'finder_state.dart';
 
@@ -9,10 +10,22 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
   StreamSubscription? _devicesSubscription;
   Timer? _shortTimeoutTimer;
   Timer? _longTimeoutTimer;
+  Timer? _minScanningTimer;
   
-  // Константы для таймаутов
+  // Timeout constants
   static const int _shortTimeoutSeconds = 15;
   static const int _longTimeoutSeconds = 30;
+  static const int _minScanningSeconds = 10; // Minimum scanning animation time
+  
+  // Store discovered devices during minimum scanning time
+  List<Device> _pendingDevices = [];
+  bool _hasFoundDevices = false;
+  DateTime? _scanStartTime;
+  
+  // Error notification
+  String? _errorMessage;
+  
+  String? get errorMessage => _errorMessage;
   
   FinderBloc({DeviceDiscoveryManager? discoveryManager}) 
       : _discoveryManager = discoveryManager ?? DeviceDiscoveryManager(),
@@ -23,36 +36,48 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
     on<ScanningErrorEvent>(_onScanningError);
     on<ScanningTimeoutEvent>(_onScanningTimeout);
     on<AnimationReverseCompletedEvent>(_onAnimationReverseCompleted);
+    on<ShowResultsEvent>(_onShowResults);
+    on<ClearErrorEvent>(_onClearError);
+    on<ShowHelpEvent>(_onShowHelp);
+    on<HideHelpEvent>(_onHideHelp);
   }
   
   Future<void> _onStartScanning(
     StartScanningEvent event, 
     Emitter<FinderState> emit
   ) async {
+    // Clear any previous error
+    _errorMessage = null;
+    
     emit(const FinderScanningState());
+    _pendingDevices = [];
+    _hasFoundDevices = false;
+    _scanStartTime = DateTime.now();
     
     try {
       final isSupported = await _discoveryManager.isSupported();
       
       if (!isSupported) {
-        emit(const FinderErrorState('Bluetooth is not available on this device'));
+        _errorMessage = 'Bluetooth is not available on this device';
+        emit(const FinderInitialState(showError: true));
         return;
       }
       
-      // Подписываемся на поток устройств
+      // Subscribe to device stream
       _devicesSubscription = _discoveryManager.devicesStream.listen(
         (devices) => add(DevicesUpdatedEvent(devices)),
         onError: (error) => add(ScanningErrorEvent(error.toString())),
       );
       
-      // Запускаем обнаружение устройств
+      // Start device discovery
       await _discoveryManager.startDiscovery();
       
-      // Устанавливаем таймеры
+      // Setup timers
       _setupTimers();
       
     } catch (e) {
-      emit(FinderErrorState('Failed to start scanning: ${e.toString()}'));
+      _errorMessage = 'Failed to start scanning: ${e.toString()}';
+      emit(const FinderInitialState(showError: true));
     }
   }
   
@@ -62,7 +87,7 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
   ) async {
     _cancelTimers();
     
-    // Сначала запускаем обратную анимацию
+    // Start reverse animation
     if (state is FinderScanningState) {
       emit(const FinderScanningState(isReversing: true));
     } else {
@@ -85,7 +110,7 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
       await _devicesSubscription?.cancel();
       _devicesSubscription = null;
     } catch (e) {
-      // Игнорируем ошибки при очистке
+      // Ignore cleanup errors
     }
   }
   
@@ -94,13 +119,36 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
     Emitter<FinderState> emit
   ) {
     if (event.devices.isNotEmpty) {
-      // Если найден хотя бы один девайс, отменяем короткий таймаут
+      _hasFoundDevices = true;
+      _pendingDevices = event.devices;
+      
+      // Cancel short timeout since we found devices
       _shortTimeoutTimer?.cancel();
       _shortTimeoutTimer = null;
       
-      emit(FinderResultsState(event.devices));
+      // Check if minimum scanning time has passed
+      if (_canShowResults()) {
+        emit(FinderResultsState(_pendingDevices));
+      }
+      // Otherwise, keep in scanning state and wait for minimum time
     } else if (state is! FinderScanningState) {
       emit(const FinderScanningState());
+    }
+  }
+  
+  bool _canShowResults() {
+    if (_scanStartTime == null) return true;
+    
+    final elapsedSeconds = DateTime.now().difference(_scanStartTime!).inSeconds;
+    return elapsedSeconds >= _minScanningSeconds;
+  }
+  
+  void _onShowResults(
+    ShowResultsEvent event,
+    Emitter<FinderState> emit
+  ) {
+    if (_hasFoundDevices && _pendingDevices.isNotEmpty) {
+      emit(FinderResultsState(_pendingDevices));
     }
   }
   
@@ -110,7 +158,10 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
   ) {
     _cancelTimers();
     _cleanupScanning();
-    emit(FinderErrorState(event.message));
+    
+    // Set error message and return to initial state with error flag
+    _errorMessage = event.message;
+    emit(const FinderInitialState(showError: true));
   }
   
   void _onScanningTimeout(
@@ -120,31 +171,79 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
     await _cleanupScanning();
     
     if (event.noDevicesFound) {
-      emit(const FinderErrorState('No devices found. Please try again.'));
-    } else if (state is FinderResultsState) {
-      // Если уже есть результаты, оставляем их
+      // Set error message and return to initial state with error flag
+      _errorMessage = 'Nothing found';
+      emit(const FinderInitialState(showError: true));
+    } else if (_hasFoundDevices) {
+      // If we have found devices, show them
+      emit(FinderResultsState(_pendingDevices));
     } else {
-      emit(const FinderErrorState('Scanning timed out. Please try again.'));
+      // Set error message and return to initial state with error flag
+      _errorMessage = 'Scanning timed out. Please try again.';
+      emit(const FinderInitialState(showError: true));
+    }
+  }
+  
+  void _onClearError(
+    ClearErrorEvent event,
+    Emitter<FinderState> emit
+  ) {
+    _errorMessage = null;
+    if (state is FinderInitialState) {
+      emit(const FinderInitialState());
+    }
+  }
+  
+  void _onShowHelp(
+    ShowHelpEvent event,
+    Emitter<FinderState> emit
+  ) {
+    if (state is FinderInitialState) {
+      emit(const FinderInitialState(showHelp: true));
+    } else if (state is FinderResultsState) {
+      final currentState = state as FinderResultsState;
+      emit(FinderResultsState(currentState.devices, showHelp: true));
+    }
+  }
+  
+  void _onHideHelp(
+    HideHelpEvent event,
+    Emitter<FinderState> emit
+  ) {
+    if (state is FinderInitialState) {
+      emit(const FinderInitialState());
+    } else if (state is FinderResultsState) {
+      final currentState = state as FinderResultsState;
+      emit(FinderResultsState(currentState.devices));
     }
   }
   
   void _setupTimers() {
     _cancelTimers();
     
-    // Короткий таймаут (15 секунд) - проверяет, найден ли хотя бы один девайс
+    // Minimum scanning time (10 seconds) - ensures animation plays for at least this long
+    _minScanningTimer = Timer(Duration(seconds: _minScanningSeconds), () {
+      if (_hasFoundDevices && _pendingDevices.isNotEmpty) {
+        add(const ShowResultsEvent());
+      }
+    });
+    
+    // Short timeout (15 seconds) - checks if at least one device is found
     _shortTimeoutTimer = Timer(Duration(seconds: _shortTimeoutSeconds), () {
-      if (state is FinderScanningState || (state is FinderResultsState && (state as FinderResultsState).devices.isEmpty)) {
+      if (!_hasFoundDevices) {
         add(const ScanningTimeoutEvent(noDevicesFound: true));
       }
     });
     
-    // Длинный таймаут (30 секунд) - в любом случае завершает сканирование
+    // Long timeout (30 seconds) - ends scanning in any case
     _longTimeoutTimer = Timer(Duration(seconds: _longTimeoutSeconds), () {
       add(const ScanningTimeoutEvent(noDevicesFound: false));
     });
   }
   
   void _cancelTimers() {
+    _minScanningTimer?.cancel();
+    _minScanningTimer = null;
     _shortTimeoutTimer?.cancel();
     _shortTimeoutTimer = null;
     _longTimeoutTimer?.cancel();

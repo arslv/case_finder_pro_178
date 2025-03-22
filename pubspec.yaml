@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.5.3
 
 dependencies:
   flutter:
@@ -17,12 +17,14 @@ dependencies:
   flutter_svg: ^2.0.10
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  modal_bottom_sheet: ^3.0.0-pre
+  modal_bottom_sheet: ^3.0.0
   flutter_blue_plus: ^1.35.3
   collection: ^1.0.0
   ffi: ^2.0.0
   meta: ^1.0.0
   plugin_platform_interface: ^2.0.2
+  geolocator: ^10.1.0
+  apple_maps_flutter: ^1.4.0
   uwb:
     path: ./uwb_plugin
 

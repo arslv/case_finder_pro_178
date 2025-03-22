@@ -45,12 +45,10 @@ class DeviceDiscoveryManager implements DeviceDiscoveryService {
     _isDiscovering = true;
     
     try {
-      // Подписываемся на поток устройств Bluetooth
       _bluetoothSubscription = _bluetoothService.devicesStream.listen((devices) {
         _updateDevices(devices, DeviceSource.bluetooth);
       });
       
-      // Запускаем обнаружение Bluetooth устройств
       await _bluetoothService.startDiscovery();
       
       // Если UWB поддерживается, запускаем и его
@@ -99,11 +97,8 @@ class DeviceDiscoveryManager implements DeviceDiscoveryService {
   void _updateDevices(List<Device> newDevices, DeviceSource source) {
     // Удаляем устройства того же источника
     _discoveredDevices.removeWhere((device) => device.source == source);
-    
-    // Добавляем новые устройства
+
     _discoveredDevices.addAll(newDevices);
-    
-    // Отправляем обновленный список в поток
     _devicesStreamController.add(_discoveredDevices.toList());
   }
 } 
