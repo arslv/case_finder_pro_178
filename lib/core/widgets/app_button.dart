@@ -9,6 +9,8 @@ class AppButton extends StatelessWidget {
   final double height;
   final double borderRadius;
   final EdgeInsetsGeometry? padding;
+  final FontWeight? fontWeight;
+  final double? fontSize;
 
   const AppButton({
     super.key,
@@ -18,6 +20,8 @@ class AppButton extends StatelessWidget {
     this.height = 50,
     this.borderRadius = 12,
     this.padding,
+    this.fontWeight,
+    this.fontSize,
   });
 
   @override
@@ -32,9 +36,12 @@ class AppButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         child: Text(
           text,
-          style: Theme.of(context).textTheme.labelLarge,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: fontWeight,
+                fontSize: fontSize,
+              ),
         ),
       ),
     );
   }
-} 
+}

@@ -12,17 +12,14 @@ class CaseFinderBloc extends Bloc<CaseFinderEvent, CaseFinderState> {
   Timer? _longTimeoutTimer;
   Timer? _minScanningTimer;
   
-  // Timeout constants
   static const int _shortTimeoutSeconds = 15;
   static const int _longTimeoutSeconds = 30;
-  static const int _minScanningSeconds = 10; // Minimum scanning animation time
+  static const int _minScanningSeconds = 10;
   
-  // Store discovered devices during minimum scanning time
   List<Device> _pendingDevices = [];
   bool _hasFoundDevices = false;
   DateTime? _scanStartTime;
   
-  // Error notification
   String? _errorMessage;
   
   String? get errorMessage => _errorMessage;
@@ -46,7 +43,6 @@ class CaseFinderBloc extends Bloc<CaseFinderEvent, CaseFinderState> {
     StartScanningEvent event, 
     Emitter<CaseFinderState> emit
   ) async {
-    // Clear any previous error
     _errorMessage = null;
     
     emit(const CaseFinderScanningState());
@@ -63,16 +59,13 @@ class CaseFinderBloc extends Bloc<CaseFinderEvent, CaseFinderState> {
         return;
       }
       
-      // Subscribe to device stream
       _devicesSubscription = _discoveryManager.devicesStream.listen(
         (devices) => add(DevicesUpdatedEvent(_filterAirPodDevices(devices))),
         onError: (error) => add(ScanningErrorEvent(error.toString())),
       );
       
-      // Start device discovery
       await _discoveryManager.startDiscovery();
       
-      // Setup timers
       _setupTimers();
       
     } catch (e) {
@@ -96,7 +89,6 @@ class CaseFinderBloc extends Bloc<CaseFinderEvent, CaseFinderState> {
   ) async {
     _cancelTimers();
     
-    // Start reverse animation
     if (state is CaseFinderScanningState) {
       emit(const CaseFinderScanningState(isReversing: true));
     } else {
@@ -115,11 +107,16 @@ class CaseFinderBloc extends Bloc<CaseFinderEvent, CaseFinderState> {
   
   Future<void> _cleanupScanning() async {
     try {
-      await _discoveryManager.stopDiscovery();
-      await _devicesSubscription?.cancel();
-      _devicesSubscription = null;
+      final hasActiveSubscription = _devicesSubscription != null;
+      
+      if (hasActiveSubscription) {
+        await _devicesSubscription?.cancel();
+        _devicesSubscription = null;
+        
+        await _discoveryManager.stopDiscovery();
+      }
     } catch (e) {
-      // Ignore cleanup errors
+      print('Cleanup scanning error: $e');
     }
   }
   
@@ -131,7 +128,6 @@ class CaseFinderBloc extends Bloc<CaseFinderEvent, CaseFinderState> {
       _hasFoundDevices = true;
       _pendingDevices = event.devices;
       
-      // Cancel short timeout since we found devices
       _shortTimeoutTimer?.cancel();
       _shortTimeoutTimer = null;
       
@@ -260,9 +256,9 @@ class CaseFinderBloc extends Bloc<CaseFinderEvent, CaseFinderState> {
   }
   
   @override
-  Future<void> close() {
-    _cleanupScanning();
+  Future<void> close() async {
     _cancelTimers();
+    await _cleanupScanning();
     return super.close();
   }
 } 

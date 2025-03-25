@@ -12,17 +12,14 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
   Timer? _longTimeoutTimer;
   Timer? _minScanningTimer;
   
-  // Timeout constants
   static const int _shortTimeoutSeconds = 15;
   static const int _longTimeoutSeconds = 30;
-  static const int _minScanningSeconds = 10; // Minimum scanning animation time
+  static const int _minScanningSeconds = 10;
   
-  // Store discovered devices during minimum scanning time
   List<Device> _pendingDevices = [];
   bool _hasFoundDevices = false;
   DateTime? _scanStartTime;
   
-  // Error notification
   String? _errorMessage;
   
   String? get errorMessage => _errorMessage;
@@ -46,7 +43,6 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
     StartScanningEvent event, 
     Emitter<FinderState> emit
   ) async {
-    // Clear any previous error
     _errorMessage = null;
     
     emit(const FinderScanningState());
@@ -63,16 +59,13 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
         return;
       }
       
-      // Subscribe to device stream
       _devicesSubscription = _discoveryManager.devicesStream.listen(
         (devices) => add(DevicesUpdatedEvent(devices)),
         onError: (error) => add(ScanningErrorEvent(error.toString())),
       );
       
-      // Start device discovery
       await _discoveryManager.startDiscovery();
       
-      // Setup timers
       _setupTimers();
       
     } catch (e) {
@@ -87,7 +80,6 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
   ) async {
     _cancelTimers();
     
-    // Start reverse animation
     if (state is FinderScanningState) {
       emit(const FinderScanningState(isReversing: true));
     } else {
@@ -106,11 +98,16 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
   
   Future<void> _cleanupScanning() async {
     try {
-      await _discoveryManager.stopDiscovery();
-      await _devicesSubscription?.cancel();
-      _devicesSubscription = null;
+      final hasActiveSubscription = _devicesSubscription != null;
+      
+      if (hasActiveSubscription) {
+        await _devicesSubscription?.cancel();
+        _devicesSubscription = null;
+        
+        await _discoveryManager.stopDiscovery();
+      }
     } catch (e) {
-      // Ignore cleanup errors
+      print('Cleanup scanning error: $e');
     }
   }
   
@@ -122,7 +119,6 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
       _hasFoundDevices = true;
       _pendingDevices = event.devices;
       
-      // Cancel short timeout since we found devices
       _shortTimeoutTimer?.cancel();
       _shortTimeoutTimer = null;
       
@@ -253,8 +249,7 @@ class FinderBloc extends Bloc<FinderEvent, FinderState> {
   @override
   Future<void> close() async {
     _cancelTimers();
-    await _devicesSubscription?.cancel();
-    await _discoveryManager.dispose();
+    await _cleanupScanning();
     return super.close();
   }
 } 

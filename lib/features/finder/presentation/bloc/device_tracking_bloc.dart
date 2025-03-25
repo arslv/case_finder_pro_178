@@ -130,7 +130,6 @@ class DeviceTrackingBloc extends Bloc<DeviceTrackingEvent, DeviceTrackingState> 
     final success = await _repository.startTracking(event.device);
 
     if (success) {
-      // Initial state with the device's current distance if available
       final initialDistance = event.device.distance ?? 10.0;
       final initialState = _determineTrackingState(initialDistance);
       
@@ -141,7 +140,6 @@ class DeviceTrackingBloc extends Bloc<DeviceTrackingEvent, DeviceTrackingState> 
         lastUpdate: DateTime.now(),
       ));
 
-      // Subscribe to tracking updates
       _trackingSubscription = _repository.trackingStream.listen(
         (result) {
           debugPrint('Bloc received tracking update: $result');
@@ -153,14 +151,12 @@ class DeviceTrackingBloc extends Bloc<DeviceTrackingEvent, DeviceTrackingState> 
         },
       );
       
-      // Set up a timer to ensure we're getting updates
-      // This is a fallback in case the Bluetooth scanning doesn't work properly
-      _updateTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _updateTimer = Timer.periodic(const Duration(seconds: 3), (_) {
         if (state is DeviceTrackingInProgress) {
           final currentState = state as DeviceTrackingInProgress;
           final timeSinceLastUpdate = DateTime.now().difference(currentState.lastUpdate).inSeconds;
           
-          if (timeSinceLastUpdate > 4) {
+          if (timeSinceLastUpdate > 2) {
             // Restart tracking
             _repository.stopTracking().then((_) {
               _repository.startTracking(currentState.device);
@@ -198,9 +194,10 @@ class DeviceTrackingBloc extends Bloc<DeviceTrackingEvent, DeviceTrackingState> 
         lastUpdate: event.result.timestamp,
       );
       
-      // Only log significant distance changes
-      if ((currentState.distance - newState.distance).abs() > 0.1 || 
+      // Only log significant distance changes - reduced threshold for logging
+      if ((currentState.distance - newState.distance).abs() > 0.05 || 
           currentState.trackingState != newState.trackingState) {
+        debugPrint('Significant distance change: ${currentState.distance.toStringAsFixed(2)}m -> ${newState.distance.toStringAsFixed(2)}m');
       }
       
       emit(newState);

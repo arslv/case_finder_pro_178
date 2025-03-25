@@ -69,33 +69,48 @@ class DeviceDiscoveryManager implements DeviceDiscoveryService {
   Future<void> stopDiscovery() async {
     if (!_isDiscovering) return;
     
+    _isDiscovering = false;
+    
     try {
-      await _bluetoothService.stopDiscovery();
-      _bluetoothSubscription?.cancel();
-      _bluetoothSubscription = null;
+      if (_bluetoothSubscription != null) {
+        await _bluetoothSubscription?.cancel();
+        _bluetoothSubscription = null;
+      }
       
-      if (_isUwbSupported) {
-        await _uwbService.stopDiscovery();
-        _uwbSubscription?.cancel();
+      if (_isUwbSupported && _uwbSubscription != null) {
+        await _uwbSubscription?.cancel();
         _uwbSubscription = null;
       }
       
-      _isDiscovering = false;
+      await _bluetoothService.stopDiscovery();
+      
+      if (_isUwbSupported) {
+        await _uwbService.stopDiscovery();
+      }
     } catch (e) {
-      rethrow;
+      print('Error stopping discovery: $e');
     }
   }
   
   @override
   Future<void> dispose() async {
-    await stopDiscovery();
-    await _bluetoothService.dispose();
-    await _uwbService.dispose();
-    await _devicesStreamController.close();
+    if (_isDiscovering) {
+      await stopDiscovery();
+    }
+    
+    try {
+      await _bluetoothService.dispose();
+      await _uwbService.dispose();
+      
+      if (!_devicesStreamController.isClosed) {
+        await _devicesStreamController.close();
+      }
+    } catch (e) {
+      print('Error disposing discovery manager: $e');
+    }
   }
   
   void _updateDevices(List<Device> newDevices, DeviceSource source) {
-    // Удаляем устройства того же источника
     _discoveredDevices.removeWhere((device) => device.source == source);
 
     _discoveredDevices.addAll(newDevices);

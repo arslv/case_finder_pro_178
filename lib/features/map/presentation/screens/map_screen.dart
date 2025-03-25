@@ -1,21 +1,26 @@
 import 'dart:ui';
-import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:apple_maps_flutter/apple_maps_flutter.dart';
+import 'package:pod_finder_pro_178/core/theme/app_colors.dart';
+import 'package:pod_finder_pro_178/core/widgets/app_button.dart';
 import '../../../../core/models/favorite_device.dart';
 import '../../../../core/navigation/app_navigator.dart';
 import '../../../favorites/presentation/bloc/favorites_bloc.dart';
+import '../widgets/device_map_marker.dart';
+import '../widgets/user_location_marker.dart';
+import '../utils/widget_to_apple_marker.dart';
 import '../bloc/map_bloc.dart';
 import '../bloc/map_event.dart';
 import '../bloc/map_state.dart';
 import 'package:pod_finder_pro_178/gen/assets.gen.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({Key? key}) : super(key: key);
+  const MapScreen({super.key});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -23,20 +28,23 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   late MapBloc _mapBloc;
-  AppleMapController? _mapController;
+  late AppleMapController _mapController;
   Set<Annotation> _annotations = {};
   DateTime _lastUpdate = DateTime.now();
-  
+
   @override
   void initState() {
     super.initState();
     _mapBloc = MapBloc();
     _mapBloc.add(const LoadMapEvent());
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        final favoritesBloc = BlocProvider.of<FavoritesBloc>(context, listen: false);
+        final favoritesBloc =
+            BlocProvider.of<FavoritesBloc>(context, listen: false);
         _mapBloc.subscribeFavoritesBloc(favoritesBloc);
+
+        _mapBloc.add(const RefreshFavoritesEvent());
       }
     });
   }
@@ -47,29 +55,44 @@ class _MapScreenState extends State<MapScreen> {
       return;
     }
     _lastUpdate = now;
-    
+
     _updateAnnotations(devices, position);
   }
-  
-  Future<void> _updateAnnotations(List<FavoriteDevice> devices, Position userPosition) async {
-    Set<Annotation> annotations = {};
-    
+
+  Future<void> _updateAnnotations(
+      List<FavoriteDevice> devices, Position userPosition) async {
+    final Set<Annotation> annotations = {};
+
+    final userLocationBitmap = await widgetToAppleMarker(
+      const UserLocationMarker(size: 32),
+      width: 32,
+      height: 32,
+    );
+
     annotations.add(
       Annotation(
         annotationId: AnnotationId('user_location'),
         position: LatLng(userPosition.latitude, userPosition.longitude),
-        icon: BitmapDescriptor.defaultAnnotation,
+        icon: userLocationBitmap,
         infoWindow: const InfoWindow(title: 'Your Location'),
       ),
     );
-    
+
     for (final device in devices) {
+      final deviceMarker = DeviceMapMarker(device: device);
+      final markerBitmap = await widgetToAppleMarker(
+        deviceMarker,
+        width: 220,
+        height: 67, // Includes the pointer
+      );
+
       annotations.add(
         Annotation(
           annotationId: AnnotationId(device.id),
           position: LatLng(device.latitude, device.longitude),
-          icon: BitmapDescriptor.defaultAnnotation,
+          icon: markerBitmap,
           anchor: const Offset(0.5, 1.0),
+          // Bottom center of the marker
           onTap: () => _navigateToDeviceTracking(device),
           infoWindow: InfoWindow(
             title: device.name,
@@ -78,7 +101,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
       );
     }
-    
+
     if (mounted) {
       setState(() {
         _annotations = annotations;
@@ -86,102 +109,22 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  String _formatLastSeen(DateTime? lastSeen) {
-    if (lastSeen == null) return 'Never';
-    final now = DateTime.now();
-    final difference = now.difference(lastSeen);
-    
-    if (difference.inMinutes < 1) return 'Just now';
-    if (difference.inHours < 1) return '${difference.inMinutes}m ago';
-    if (difference.inDays < 1) return '${difference.inHours}h ago';
-    if (difference.inDays < 7) return '${difference.inDays}d ago';
-    return '${lastSeen.day}/${lastSeen.month}/${lastSeen.year}';
-  }
-
-  Widget _buildDeviceInfoWindow(FavoriteDevice device) {
-    return Container(
-      width: 280,
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          // Bluetooth icon
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: CupertinoColors.activeBlue,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Center(
-              child: SvgPicture.asset(
-                Assets.vector.blueLogo,
-                width: 24,
-                height: 24,
-                colorFilter: const ColorFilter.mode(
-                  CupertinoColors.white,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ),
-          ),
-          
-          const SizedBox(width: 12),
-          
-          // Device info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  device.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Tap to track',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: CupertinoColors.systemGrey.resolveFrom(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Chevron
-          const Icon(
-            CupertinoIcons.chevron_right,
-            color: CupertinoColors.systemGrey,
-          ),
-        ],
-      ),
-    );
-  }
-  
   void _navigateToDeviceTracking(FavoriteDevice device) {
     AppNavigator.navigateToTrackDevice(context, device.toDevice());
   }
-  
+
   void _centerMap(Position position) {
-    _mapController?.animateCamera(
-      CameraUpdate.newLatLng(
-        LatLng(position.latitude, position.longitude)
-      ),
+    _mapController.animateCamera(
+      CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
     );
   }
-  
+
   @override
   void dispose() {
     _mapBloc.close();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -189,12 +132,15 @@ class _MapScreenState extends State<MapScreen> {
         create: (context) => _mapBloc,
         child: BlocConsumer<MapBloc, MapState>(
           listener: (context, state) {
-            if (state is MapLoadedState && state.shouldCenter && _mapController != null) {
+            if (state is MapLoadedState &&
+                state.shouldCenter &&
+                _mapController != null) {
               _centerMap(state.currentPosition);
             }
-            
+
             if (state is MapLoadedState) {
-              _handleDevicesChange(state.favoriteDevices, state.currentPosition);
+              _handleDevicesChange(
+                  state.favoriteDevices, state.currentPosition);
             }
           },
           builder: (context, state) {
@@ -203,11 +149,15 @@ class _MapScreenState extends State<MapScreen> {
                 child: CupertinoActivityIndicator(),
               );
             } else if (state is MapLoadedState) {
-              return _buildMapContent(context, state);
+              if (state.hasPermission) {
+                return _buildMapContent(context, state);
+              } else {
+                return _MapErrorView();
+              }
             } else if (state is MapErrorState) {
               return _MapErrorView(errorMessage: state.message);
             }
-            
+
             return const Center(
               child: CupertinoActivityIndicator(),
             );
@@ -216,7 +166,7 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
   }
-  
+
   Widget _buildMapContent(BuildContext context, MapLoadedState state) {
     return Stack(
       children: [
@@ -236,7 +186,6 @@ class _MapScreenState extends State<MapScreen> {
           mapType: MapType.standard,
           annotations: _annotations,
         ),
-        
         Positioned(
           right: 16,
           bottom: 30,
@@ -251,34 +200,23 @@ class _MapScreenState extends State<MapScreen> {
 
 class CenterLocationButton extends StatelessWidget {
   final VoidCallback onPressed;
-  
-  const CenterLocationButton({Key? key, required this.onPressed}) : super(key: key);
+
+  const CenterLocationButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      borderRadius: BorderRadius.circular(30),
+      borderRadius: BorderRadius.circular(16),
       color: CupertinoColors.white,
       onPressed: onPressed,
-      child: Container(
+      child: SizedBox(
         width: 60,
         height: 60,
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: CupertinoColors.systemGrey.withOpacity(0.3),
-              blurRadius: 5,
-              spreadRadius: 1,
-            ),
-          ],
-          shape: BoxShape.circle,
-        ),
         child: Center(
           child: SvgPicture.asset(
             Assets.vector.crosshair,
-            width: 24,
-            height: 24,
+            fit: BoxFit.cover,
           ),
         ),
       ),
@@ -287,10 +225,10 @@ class CenterLocationButton extends StatelessWidget {
 }
 
 class _MapErrorView extends StatelessWidget {
-  final String errorMessage;
-  
-  const _MapErrorView({required this.errorMessage});
-  
+  final String? errorMessage;
+
+  const _MapErrorView({this.errorMessage});
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -298,52 +236,58 @@ class _MapErrorView extends StatelessWidget {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              CupertinoIcons.exclamationmark_triangle,
-              size: 48,
-              color: CupertinoColors.systemRed,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              errorMessage,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-              ),
-            ),
-          ],
+          children: errorMessage != null
+              ? [
+                  const Icon(
+                    CupertinoIcons.exclamationmark_triangle,
+                    size: 48,
+                    color: CupertinoColors.systemRed,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                    ),
+                  ),
+                ]
+              : [
+                  SvgPicture.asset(
+                    Assets.vector.mapInactive,
+                    width: 100,
+                    height: 100,
+                    color: AppColors.primary.withOpacity(0.14),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Location Services Disabled',
+                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  Text(
+                    'Go to Settings > Privacy & Security >\nLocation Services and turn on location\naccess',
+                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: AppButton(
+                      text: 'Enable Location',
+                      onPressed: () async {
+                          final mapBloc = context.read<MapBloc>();
+                          mapBloc.add(const LoadMapEvent());
+                      },
+                    ),
+                  ),
+                ],
         ),
       ),
     );
   }
 }
-
-// Painter для треугольного указателя под маркером устройства
-class TrianglePointer extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
-      ..color = CupertinoColors.white
-      ..style = PaintingStyle.fill;
-    
-    final Path path = Path()
-      ..moveTo(size.width / 2, size.height)
-      ..lineTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..close();
-    
-    canvas.drawPath(path, paint);
-    
-    // Добавляем тень
-    final Paint shadowPaint = Paint()
-      ..color = CupertinoColors.systemGrey.withOpacity(0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    
-    canvas.drawPath(path, shadowPaint);
-  }
-  
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-} 

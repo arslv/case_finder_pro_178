@@ -40,7 +40,6 @@ class UwbDiscoveryService implements DeviceDiscoveryService {
     try {
       _isDiscovering = true;
       
-      // Подписываемся на поток обнаруженных UWB устройств
       _uwbDevicesSubscription = _uwb.discoveredDevicesStream.listen((devices) {
         final mappedDevices = devices.map((uwbDevice) => Device(
           id: uwbDevice.id,
@@ -55,7 +54,6 @@ class UwbDiscoveryService implements DeviceDiscoveryService {
         _devicesStreamController.add(_discoveredDevices.toList());
       });
       
-      // Запускаем обнаружение UWB устройств
       await _uwb.discoverDevices('My Device');
     } catch (e) {
       _isDiscovering = false;

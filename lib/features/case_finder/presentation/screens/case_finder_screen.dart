@@ -37,10 +37,8 @@ class CaseFinderScreenContent extends StatelessWidget {
       appBar: CustomAppBar(title: 'Case Finder', suffix: ProButton()),
       body: BlocBuilder<CaseFinderBloc, CaseFinderState>(
         builder: (context, state) {
-          // Show help panel if needed
           if ((state is CaseFinderInitialState && state.showHelp) ||
               (state is CaseFinderResultsState && state.showHelp)) {
-            // Use a post-frame callback to show the modal after the frame is built
             WidgetsBinding.instance.addPostFrameCallback((_) {
               HelpPanel.show(context).then((_) {
                 if (context.mounted) {
@@ -59,7 +57,6 @@ class CaseFinderScreenContent extends StatelessWidget {
                       child: _buildContent(context, state),
                     ),
                     _buildBottomButton(context, state),
-                    const SizedBox(height: 0),
                   ],
                 ),
                 if (state is CaseFinderInitialState &&
@@ -83,7 +80,8 @@ class CaseFinderScreenContent extends StatelessWidget {
     } else if (state is CaseFinderScanningState) {
       return ScanningAnimation(
         isReversing: state.isReversing,
-        assetPath: Assets.vector.caseFinderActive,
+        assetPath: Assets.vector.blueCaseLogo,
+        subText: 'Scan for AirPod Case by\ntapping the button',
         onReverseComplete: state.isReversing
             ? () => context
                 .read<CaseFinderBloc>()
@@ -112,14 +110,14 @@ class CaseFinderScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 30),
             SvgPicture.asset(
-              Assets.vector.caseFinderActive,
+              Assets.vector.blueCaseLogo,
               width: 150,
               height: 150,
               fit: BoxFit.contain,
             ),
             const SizedBox(height: 30),
             Text(
-              'Scan for AirPods and\nsimilar devices',
+              'Scan for AirPod Case by\ntapping the button',
               style: Theme.of(context)
                   .textTheme
                   .headlineMedium!
@@ -159,7 +157,7 @@ class CaseFinderScreenContent extends StatelessWidget {
       if (state.isReversing) {
         return const SizedBox(
           key: ValueKey('empty'),
-          height: 16,
+          height: 0,
         );
       }
 
@@ -172,9 +170,11 @@ class CaseFinderScreenContent extends StatelessWidget {
             opacity: value,
             child: Padding(
               key: const ValueKey('cancel'),
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: AppButton(
                 text: 'Cancel',
+                borderRadius: 16,
+                backgroundColor: AppColors.red,
                 onPressed: () =>
                     context.read<CaseFinderBloc>().add(const StopScanningEvent()),
               ),
@@ -185,9 +185,13 @@ class CaseFinderScreenContent extends StatelessWidget {
     } else if (state is CaseFinderResultsState) {
       return Padding(
         key: const ValueKey('refresh'),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: AppButton(
           text: 'Refresh',
+          borderRadius: 16,
+          padding: EdgeInsets.zero,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
           onPressed: () =>
               context.read<CaseFinderBloc>().add(const StartScanningEvent()),
         ),
@@ -196,7 +200,7 @@ class CaseFinderScreenContent extends StatelessWidget {
 
     return const SizedBox(
       key: ValueKey('empty'),
-      height: 16,
+      height: 0,
     );
   }
 } 

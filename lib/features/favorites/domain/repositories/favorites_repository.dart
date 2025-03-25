@@ -44,6 +44,21 @@ class FavoritesRepository {
     }
   }
   
+  /// Check if a device name already exists in favorites (case-insensitive)
+  Future<bool> hasDeviceWithName(String name, {String? excludeId}) async {
+    try {
+      await init();
+      final devices = _favoritesBox?.values.toList() ?? [];
+      return devices.any((device) => 
+        device.name.toLowerCase() == name.toLowerCase() && 
+        device.id != excludeId
+      );
+    } catch (e) {
+      debugPrint('Error checking for device name: $e');
+      return false;
+    }
+  }
+  
   /// Add a device to favorites with current location
   Future<bool> addToFavorites(Device device) async {
     try {
@@ -53,6 +68,12 @@ class FavoritesRepository {
       final isAlreadyFavorite = await isFavorite(device.id);
       if (isAlreadyFavorite) {
         return true;
+      }
+      
+      // Check for duplicate name
+      final hasDuplicateName = await hasDeviceWithName(device.name);
+      if (hasDuplicateName) {
+        return false;
       }
       
       final position = await _geolocationService.getCurrentPosition();

@@ -41,7 +41,6 @@ class FavoriteDevice extends HiveObject {
     required this.addedAt,
   });
   
-  // Factory constructor to create from a Device and Position
   factory FavoriteDevice.fromDeviceAndPosition(Device device, Position position) {
     return FavoriteDevice(
       id: device.id,
@@ -55,7 +54,6 @@ class FavoriteDevice extends HiveObject {
     );
   }
   
-  // Convert back to Device
   Device toDevice() {
     return Device(
       id: id,

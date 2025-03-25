@@ -55,7 +55,6 @@ class FinderScreenContent extends StatelessWidget {
                       child: _buildContent(context, state),
                     ),
                     _buildBottomButton(context, state),
-                    const SizedBox(height: 0),
                   ],
                 ),
                 if (state is FinderInitialState &&
@@ -79,6 +78,7 @@ class FinderScreenContent extends StatelessWidget {
     } else if (state is FinderScanningState) {
       return ScanningAnimation(
         isReversing: state.isReversing,
+        subText: 'Scan for devices by\ntapping the button',
         assetPath: Assets.images.finderLogo.path,
         onReverseComplete: state.isReversing
             ? () => context
@@ -133,7 +133,7 @@ class FinderScreenContent extends StatelessWidget {
 
   Widget _buildBottomButton(BuildContext context, FinderState state) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 500),
       transitionBuilder: (Widget child, Animation<double> animation) {
         return FadeTransition(
           opacity: animation,
@@ -158,22 +158,25 @@ class FinderScreenContent extends StatelessWidget {
       if (state.isReversing) {
         return const SizedBox(
           key: ValueKey('empty'),
-          height: 16,
+          height: 0,
         );
       }
 
       return TweenAnimationBuilder<double>(
         tween: Tween<double>(begin: 0.0, end: 1.0),
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 600),
         curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
         builder: (context, value, child) {
           return Opacity(
             opacity: value,
             child: Padding(
               key: const ValueKey('cancel'),
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: AppButton(
+                padding: EdgeInsets.zero,
                 text: 'Cancel',
+                backgroundColor: AppColors.red,
+                borderRadius: 16,
                 onPressed: () => 
                     context.read<FinderBloc>().add(const StopScanningEvent()),
               ),
@@ -184,9 +187,13 @@ class FinderScreenContent extends StatelessWidget {
     } else if (state is FinderResultsState) {
       return Padding(
         key: const ValueKey('refresh'),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: AppButton(
           text: 'Refresh',
+          borderRadius: 16,
+          padding: EdgeInsets.zero,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
           onPressed: () =>
               context.read<FinderBloc>().add(const StartScanningEvent()),
         ),
@@ -195,7 +202,7 @@ class FinderScreenContent extends StatelessWidget {
 
     return const SizedBox(
       key: ValueKey('empty'),
-      height: 16,
+      height: 0,
     );
   }
 }

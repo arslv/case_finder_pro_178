@@ -38,17 +38,13 @@ class DeviceTrackingService {
   
   DeviceTrackingService._internal();
   
-  // Stream controller for tracking updates
   final _trackingStreamController = StreamController<DeviceTrackingResult>.broadcast();
   
-  // Subscriptions
   StreamSubscription? _scanResultsSubscription;
   Timer? _scanRestartTimer;
-  
-  // Tracking state
+
   bool _isTracking = false;
   String? _trackedDeviceId;
-  String? _trackedDeviceName;
   bool _isDisposed = false;
   
   // Distance history for smoothing
@@ -69,7 +65,6 @@ class DeviceTrackingService {
     debugPrint('Starting tracking for device: ${device.id} (${device.name})');
     
     _trackedDeviceId = device.id;
-    _trackedDeviceName = device.name;
     _distanceHistory.clear();
     _lastResult = null;
     _lastEmitTime = null;
@@ -87,7 +82,7 @@ class DeviceTrackingService {
       
       _scanRestartTimer?.cancel();
       
-      _scanRestartTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      _scanRestartTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
 
         final isScanning = await FlutterBluePlus.isScanning.first;
         
@@ -144,7 +139,7 @@ class DeviceTrackingService {
 
 
       await FlutterBluePlus.startScan(
-        timeout: const Duration(seconds: 4),
+        timeout: const Duration(seconds: 2),
         androidScanMode: AndroidScanMode.lowLatency,
       );
       
@@ -157,7 +152,7 @@ class DeviceTrackingService {
       });
       
       // Set up a one-time timer to restart the scan after it times out
-      Future.delayed(const Duration(seconds: 5), () {
+      Future.delayed(const Duration(seconds: 3), () {
         if (_isTracking) {
           debugPrint('Restarting Bluetooth scan after timeout');
           _startBluetoothScan();
@@ -166,7 +161,7 @@ class DeviceTrackingService {
     } catch (e) {
       debugPrint('Error starting Bluetooth scan: $e');
       
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 1), () {
         if (_isTracking) {
           _startBluetoothScan();
         }
@@ -176,12 +171,9 @@ class DeviceTrackingService {
   
   void _processScanResults(List<ScanResult> results) {
     if (!_isTracking || _trackedDeviceId == null || _isDisposed) return;
-    bool deviceFound = false;
     for (ScanResult result in results) {
       if (result.device.remoteId.str == _trackedDeviceId) {
-        deviceFound = true;
 
-        // Calculate distance from RSSI
         final distance = _calculateDistance(result.rssi);
         if (distance != null) {
           final smoothedDistance = _applySmoothing(distance);
@@ -209,7 +201,7 @@ class DeviceTrackingService {
     }
     
     if (_lastEmitTime != null &&
-        DateTime.now().difference(_lastEmitTime!).inSeconds > 2 && 
+        DateTime.now().difference(_lastEmitTime!).inSeconds > 1 &&
         _lastResult != null &&
         !_isDisposed) {
       
@@ -238,15 +230,15 @@ class DeviceTrackingService {
       return true;
     }
     
-    // Emit if distance changed significantly (reduced threshold)
+    // Emit if distance changed significantly - reduced threshold for smoother updates
     final distanceDiff = (newResult.distance - _lastResult!.distance).abs();
-    if (distanceDiff > 0.02) { // Reduced from 0.05 to 0.02
+    if (distanceDiff > 0.01) {
       return true;
     }
     
-    // Emit at least every 300ms to ensure UI updates (reduced from 500ms)
+    // Emit more frequently to ensure smoother UI updates (reduced from 300ms to 100ms)
     final timeDiff = DateTime.now().difference(_lastEmitTime!).inMilliseconds;
-    if (timeDiff > 300) {
+    if (timeDiff > 100) {
       return true;
     }
     
@@ -265,7 +257,6 @@ class DeviceTrackingService {
       _scanResultsSubscription = null;
       _isTracking = false;
       _trackedDeviceId = null;
-      _trackedDeviceName = null;
       _distanceHistory.clear();
       _lastResult = null;
       _lastEmitTime = null;
@@ -274,38 +265,41 @@ class DeviceTrackingService {
     }
   }
   
-  // Apply smoothing to distance values
   double _applySmoothing(double newDistance) {
-    // Add to history and maintain max size
     _distanceHistory.add(newDistance);
     if (_distanceHistory.length > _maxHistorySize) {
       _distanceHistory.removeAt(0);
     }
     
-    // Apply Kalman-inspired filtering
+    // Apply improved smoothing algorithm
     if (_distanceHistory.length < 2) return newDistance;
     
     // Sort distances to remove outliers
     final sortedDistances = List<double>.from(_distanceHistory)..sort();
     
     // Remove top and bottom values if we have enough samples
-    final filteredDistances = sortedDistances;
+    final filteredDistances = List<double>.from(sortedDistances);
     if (filteredDistances.length >= 4) {
       filteredDistances.removeAt(filteredDistances.length - 1); // Remove highest
       filteredDistances.removeAt(0); // Remove lowest
     }
     
-    // Calculate weighted average (recent values have more weight)
+    // Calculate exponentially weighted moving average (more weight on recent values)
     double weightedSum = 0;
     double weightSum = 0;
     
     for (int i = 0; i < filteredDistances.length; i++) {
-      final weight = i + 1; // More recent values get higher weights
+      // Exponential weighting - recent values have much more influence
+      final weight = pow(2.0, i) as double; // Exponential weights
       weightedSum += filteredDistances[i] * weight;
       weightSum += weight;
     }
     
-    return weightedSum / weightSum;
+    // Apply additional bias toward newest value for quicker response
+    final smoothedValue = weightedSum / weightSum;
+    
+    // Mix raw and smoothed for faster response (70% smooth, 30% raw)
+    return smoothedValue * 0.7 + newDistance * 0.3;
   }
   
   TrackingState _determineTrackingState(double distance) {
@@ -341,7 +335,7 @@ class DeviceTrackingService {
     
     // Base formula: 10^((txPower - rssi)/(10 * n))
     final double rawDistance = pow(10, (txPower - rssi) / (10 * n)).toDouble();
-    
+
     // Limit minimum and maximum values to prevent outliers
     if (rawDistance < 0.5) return 0.5;
     if (rawDistance > 30.0) return 30.0;

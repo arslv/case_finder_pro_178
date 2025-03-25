@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pod_finder_pro_178/features/case_finder/presentation/screens/case_finder_screen.dart';
 import 'package:pod_finder_pro_178/features/finder/presentation/screens/finder_screen.dart';
 import 'package:pod_finder_pro_178/features/favorites/presentation/screens/favorites_screen.dart';
 import 'package:pod_finder_pro_178/features/map/presentation/screens/map_screen.dart';
+import 'package:pod_finder_pro_178/features/settings/presentation/screens/settings_screen.dart';
 import '../../../../core/navigation/nav_bar_item.dart';
 import '../../../../core/widgets/custom_nav_bar.dart';
 import '../bloc/main_screen_bloc.dart';
@@ -41,7 +43,7 @@ class MainScreen extends StatelessWidget {
       activeIcon: 'assets/vector/settings_active.svg',
       inactiveIcon: 'assets/vector/settings_inactive.svg',
       // screen: const SettingsScreen(),
-      screen: const Placeholder(),
+      screen: const SettingsScreen(),
     ),
   ];
 
@@ -50,26 +52,20 @@ class MainScreen extends StatelessWidget {
     return BlocBuilder<MainScreenBloc, MainScreenState>(
       builder: (context, state) {
         return CupertinoPageScaffold(
-          child: Stack(
+          child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 49),
+              Expanded(
                 child: IndexedStack(
                   index: state.currentIndex,
                   children: _navBarItems.map((item) => item.screen).toList(),
                 ),
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: CustomNavBar(
-                  items: _navBarItems,
-                  currentIndex: state.currentIndex,
-                  onTap: (index) {
-                    context.read<MainScreenBloc>().add(TabChanged(index));
-                  },
-                ),
+              CustomNavBar(
+                items: _navBarItems,
+                currentIndex: state.currentIndex,
+                onTap: (index) {
+                  context.read<MainScreenBloc>().add(TabChanged(index));
+                },
               ),
             ],
           ),
@@ -77,4 +73,4 @@ class MainScreen extends StatelessWidget {
       },
     );
   }
-} 
+}

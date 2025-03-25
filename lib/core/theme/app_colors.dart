@@ -7,4 +7,6 @@ class AppColors {
   static const Color featuresBg = Color(0xFFF2F2F7);
   static const Color black = Colors.black;
   static const Color error = Colors.red;
-} 
+
+  static const Color red = Color(0xFFF95959);
+}

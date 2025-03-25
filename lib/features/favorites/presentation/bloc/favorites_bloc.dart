@@ -1,12 +1,24 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/material.dart';
 import '../../domain/repositories/favorites_repository.dart';
+import '../../../map/presentation/bloc/map_bloc.dart';
+import '../../../map/presentation/bloc/map_event.dart';
 import 'favorites_event.dart';
 import 'favorites_state.dart';
 
 class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
   final FavoritesRepository _repository;
+  
+  FavoritesLoaded? _lastLoadedState;
 
-  FavoritesBloc()
+  static FavoritesBloc? _instance;
+
+  static FavoritesBloc get instance {
+    _instance ??= FavoritesBloc._internal();
+    return _instance!;
+  }
+
+  FavoritesBloc._internal()
       : _repository = FavoritesRepository.instance,
         super(const FavoritesInitial()) {
     on<LoadFavoritesEvent>(_onLoadFavorites);
@@ -17,15 +29,34 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
     _repository.init();
   }
 
+  factory FavoritesBloc() {
+    return instance;
+  }
+
+  void updateMap() {
+    try {
+      for (final mapBloc in MapBloc.instances) {
+        mapBloc.add(const RefreshFavoritesEvent());
+      }
+    } catch (e) {
+      debugPrint('Error updating map: $e');
+    }
+  }
+
   Future<void> _onLoadFavorites(
     LoadFavoritesEvent event,
     Emitter<FavoritesState> emit,
   ) async {
-    emit(const FavoritesLoading());
+    if (_lastLoadedState == null) {
+      emit(const FavoritesLoading());
+    }
     
     try {
       final favorites = await _repository.getAllFavorites();
-      emit(FavoritesLoaded(favorites));
+      _lastLoadedState = FavoritesLoaded(favorites);
+      emit(_lastLoadedState!);
+      
+      updateMap();
     } catch (e) {
       emit(FavoritesError(e.toString()));
     }
@@ -39,25 +70,27 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
       final success = await _repository.addToFavorites(event.device);
       
       if (success) {
-        // First update the favorite status
         emit(DeviceIsFavorite(event.device.id, true));
         
-        // Then reload the favorites list 
         final favorites = await _repository.getAllFavorites();
-        emit(FavoritesLoaded(favorites));
+        _lastLoadedState = FavoritesLoaded(favorites);
+        
+        emit(_lastLoadedState!);
+        
+        updateMap();
       } else {
         emit(const FavoritesError('Failed to add device to favorites'));
         
-        // Reload current state
-        final favorites = await _repository.getAllFavorites();
-        emit(FavoritesLoaded(favorites));
+        if (_lastLoadedState != null) {
+          emit(_lastLoadedState!);
+        }
       }
     } catch (e) {
       emit(FavoritesError(e.toString()));
       
-      // Reload current state
-      final favorites = await _repository.getAllFavorites();
-      emit(FavoritesLoaded(favorites));
+      if (_lastLoadedState != null) {
+        emit(_lastLoadedState!);
+      }
     }
   }
 
@@ -69,25 +102,27 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
       final success = await _repository.removeFromFavorites(event.deviceId);
       
       if (success) {
-        // First update the favorite status
         emit(DeviceIsFavorite(event.deviceId, false));
         
-        // Then reload the favorites list
         final favorites = await _repository.getAllFavorites();
-        emit(FavoritesLoaded(favorites));
+        _lastLoadedState = FavoritesLoaded(favorites);
+        
+        emit(_lastLoadedState!);
+        
+        updateMap();
       } else {
         emit(const FavoritesError('Failed to remove device from favorites'));
         
-        // Reload current state
-        final favorites = await _repository.getAllFavorites();
-        emit(FavoritesLoaded(favorites));
+        if (_lastLoadedState != null) {
+          emit(_lastLoadedState!);
+        }
       }
     } catch (e) {
       emit(FavoritesError(e.toString()));
       
-      // Reload current state
-      final favorites = await _repository.getAllFavorites();
-      emit(FavoritesLoaded(favorites));
+      if (_lastLoadedState != null) {
+        emit(_lastLoadedState!);
+      }
     }
   }
   
@@ -97,9 +132,20 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
   ) async {
     try {
       final isFavorite = await _repository.isFavorite(event.deviceId);
+      
       emit(DeviceIsFavorite(event.deviceId, isFavorite));
+      
+      if (_lastLoadedState != null) {
+        await Future.delayed(const Duration(milliseconds: 50));
+        emit(_lastLoadedState!);
+      }
     } catch (e) {
       emit(DeviceIsFavorite(event.deviceId, false));
+      
+      if (_lastLoadedState != null) {
+        await Future.delayed(const Duration(milliseconds: 50));
+        emit(_lastLoadedState!);
+      }
     }
   }
 } 

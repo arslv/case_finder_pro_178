@@ -9,7 +9,7 @@ import '../bloc/finder_bloc.dart';
 import '../bloc/finder_event.dart';
 
 class HelpPanel extends StatelessWidget {
-  const HelpPanel({Key? key}) : super(key: key);
+  const HelpPanel({super.key});
 
   static Future<void> show(BuildContext context) {
     return showCupertinoModalBottomSheet(

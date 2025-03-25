@@ -1,34 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class ErrorNotification extends StatefulWidget {
   final String message;
   final VoidCallback? onDismiss;
-  
+
   const ErrorNotification({
-    Key? key,
+    super.key,
     required this.message,
     this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   State<ErrorNotification> createState() => _ErrorNotificationState();
 }
 
-class _ErrorNotificationState extends State<ErrorNotification> with SingleTickerProviderStateMixin {
+class _ErrorNotificationState extends State<ErrorNotification>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _offsetAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     _offsetAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: Offset.zero,
@@ -36,17 +35,16 @@ class _ErrorNotificationState extends State<ErrorNotification> with SingleTicker
       parent: _controller,
       curve: Curves.easeOut,
     ));
-    
+
     _controller.forward();
-    
-    // Auto-dismiss after 3 seconds
+
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         _dismissNotification();
       }
     });
   }
-  
+
   void _dismissNotification() {
     _controller.reverse().then((_) {
       if (mounted && widget.onDismiss != null) {
@@ -54,7 +52,7 @@ class _ErrorNotificationState extends State<ErrorNotification> with SingleTicker
       }
     });
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
@@ -114,4 +112,4 @@ class _ErrorNotificationState extends State<ErrorNotification> with SingleTicker
       ),
     );
   }
-} 
+}

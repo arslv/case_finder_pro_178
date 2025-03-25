@@ -57,7 +57,6 @@ class _InitialAnimationState extends State<InitialAnimation>
               return Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Subtle waves
                   ...List.generate(3, (index) {
                     final delay = index * 0.3;
                     final value = (_animation.value + delay) % 1.0;
@@ -77,7 +76,6 @@ class _InitialAnimationState extends State<InitialAnimation>
                       ),
                     );
                   }),
-                  // Bluetooth logo
                   Image.asset(
                     Assets.images.finderLogo.path,
                     fit: BoxFit.cover,

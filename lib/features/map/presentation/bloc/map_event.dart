@@ -9,17 +9,14 @@ abstract class MapEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-// Event to load the map with favorite devices
 class LoadMapEvent extends MapEvent {
   const LoadMapEvent();
 }
 
-// Event to center the map on user's current location
 class CenterMapEvent extends MapEvent {
   const CenterMapEvent();
 }
 
-// Event when a device on the map is selected
 class DeviceSelectedEvent extends MapEvent {
   final FavoriteDevice device;
   
@@ -29,7 +26,6 @@ class DeviceSelectedEvent extends MapEvent {
   List<Object?> get props => [device];
 }
 
-// Event to update the user's position on the map
 class UpdatePositionEvent extends MapEvent {
   final Position position;
   

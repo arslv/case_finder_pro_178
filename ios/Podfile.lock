@@ -1,4 +1,8 @@
 PODS:
+  - apphud (2.5.0):
+    - ApphudSDK (= 3.4.0)
+    - Flutter
+  - ApphudSDK (3.4.0)
   - apple_maps_flutter (0.0.1):
     - Flutter
   - Flutter (1.0.0)
@@ -14,6 +18,7 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
+  - apphud (from `.symlinks/plugins/apphud/ios`)
   - apple_maps_flutter (from `.symlinks/plugins/apple_maps_flutter/ios`)
   - Flutter (from `Flutter`)
   - flutter_blue_plus_darwin (from `.symlinks/plugins/flutter_blue_plus_darwin/darwin`)
@@ -21,7 +26,13 @@ DEPENDENCIES:
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - uwb (from `.symlinks/plugins/uwb/ios`)
 
+SPEC REPOS:
+  trunk:
+    - ApphudSDK
+
 EXTERNAL SOURCES:
+  apphud:
+    :path: ".symlinks/plugins/apphud/ios"
   apple_maps_flutter:
     :path: ".symlinks/plugins/apple_maps_flutter/ios"
   Flutter:
@@ -36,6 +47,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/uwb/ios"
 
 SPEC CHECKSUMS:
+  apphud: df0e55145d223c5d818aed5d48f3dd8c5365ee63
+  ApphudSDK: c8989de464bc45c382e132b750851d720377a2f1
   apple_maps_flutter: c59725efea39e13e703cde52a1d2b14866ad68a8
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   flutter_blue_plus_darwin: 3ea4ec9133b377febcc8a70b28cd2d2dc9242bd9

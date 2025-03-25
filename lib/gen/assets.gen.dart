@@ -41,8 +41,16 @@ class $AssetsImagesGen {
   /// File path: assets/images/onb_4.png
   AssetGenImage get onb4 => const AssetGenImage('assets/images/onb_4.png');
 
+  /// File path: assets/images/paywall.png
+  AssetGenImage get paywall => const AssetGenImage('assets/images/paywall.png');
+
+  /// File path: assets/images/pro_button_bg.png
+  AssetGenImage get proButtonBg =>
+      const AssetGenImage('assets/images/pro_button_bg.png');
+
   /// List of all assets
-  List<AssetGenImage> get values => [finderLogo, onb1, onb2, onb3, onb4];
+  List<AssetGenImage> get values =>
+      [finderLogo, onb1, onb2, onb3, onb4, paywall, proButtonBg];
 }
 
 class $AssetsVectorGen {
@@ -57,6 +65,9 @@ class $AssetsVectorGen {
   /// File path: assets/vector/airpods_pro.svg
   String get airpodsPro => 'assets/vector/airpods_pro.svg';
 
+  /// File path: assets/vector/blue_case_logo.svg
+  String get blueCaseLogo => 'assets/vector/blue_case_logo.svg';
+
   /// File path: assets/vector/blue_logo.svg
   String get blueLogo => 'assets/vector/blue_logo.svg';
 
@@ -65,6 +76,12 @@ class $AssetsVectorGen {
 
   /// File path: assets/vector/case_finder_inactive.svg
   String get caseFinderInactive => 'assets/vector/case_finder_inactive.svg';
+
+  /// File path: assets/vector/chevron_right.svg
+  String get chevronRight => 'assets/vector/chevron_right.svg';
+
+  /// File path: assets/vector/contact_us.svg
+  String get contactUs => 'assets/vector/contact_us.svg';
 
   /// File path: assets/vector/crosshair.svg
   String get crosshair => 'assets/vector/crosshair.svg';
@@ -118,8 +135,14 @@ class $AssetsVectorGen {
   /// File path: assets/vector/map_inactive.svg
   String get mapInactive => 'assets/vector/map_inactive.svg';
 
+  /// File path: assets/vector/privacy_policy.svg
+  String get privacyPolicy => 'assets/vector/privacy_policy.svg';
+
   /// File path: assets/vector/pro.svg
   String get pro => 'assets/vector/pro.svg';
+
+  /// File path: assets/vector/rate_us.svg
+  String get rateUs => 'assets/vector/rate_us.svg';
 
   /// File path: assets/vector/settings_active.svg
   String get settingsActive => 'assets/vector/settings_active.svg';
@@ -127,14 +150,29 @@ class $AssetsVectorGen {
   /// File path: assets/vector/settings_inactive.svg
   String get settingsInactive => 'assets/vector/settings_inactive.svg';
 
+  /// File path: assets/vector/share_us.svg
+  String get shareUs => 'assets/vector/share_us.svg';
+
+  /// File path: assets/vector/support.svg
+  String get support => 'assets/vector/support.svg';
+
+  /// File path: assets/vector/terms_of_use.svg
+  String get termsOfUse => 'assets/vector/terms_of_use.svg';
+
+  /// File path: assets/vector/version.svg
+  String get version => 'assets/vector/version.svg';
+
   /// List of all assets
   List<String> get values => [
         airpods,
         airpodsMax,
         airpodsPro,
+        blueCaseLogo,
         blueLogo,
         caseFinderActive,
         caseFinderInactive,
+        chevronRight,
+        contactUs,
         crosshair,
         exit,
         exitRound,
@@ -152,9 +190,15 @@ class $AssetsVectorGen {
         info,
         mapActive,
         mapInactive,
+        privacyPolicy,
         pro,
+        rateUs,
         settingsActive,
-        settingsInactive
+        settingsInactive,
+        shareUs,
+        support,
+        termsOfUse,
+        version
       ];
 }
 

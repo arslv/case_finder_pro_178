@@ -33,7 +33,7 @@
         android:required="true" />
 
     <application
-        android:label="Pod Finder Pro"
+        android:label="Pod Finder Pro 178"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

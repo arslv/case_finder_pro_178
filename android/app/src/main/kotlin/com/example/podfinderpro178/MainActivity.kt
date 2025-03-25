@@ -1,4 +1,4 @@
-package com.example.pod_finder_pro_178
+package com.example.podfinderpro178
 
 import io.flutter.embedding.android.FlutterActivity
 

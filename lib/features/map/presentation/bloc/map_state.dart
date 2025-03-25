@@ -21,11 +21,13 @@ class MapLoadedState extends MapState {
   final Position currentPosition;
   final List<FavoriteDevice> favoriteDevices;
   final bool shouldCenter;
-  
+  final bool hasPermission;
+
   const MapLoadedState({
     required this.currentPosition,
     required this.favoriteDevices,
     this.shouldCenter = false,
+    this.hasPermission = false,
   });
   
   @override
@@ -35,11 +37,13 @@ class MapLoadedState extends MapState {
     Position? currentPosition,
     List<FavoriteDevice>? favoriteDevices,
     bool? shouldCenter,
+    bool? hasPermission,
   }) {
     return MapLoadedState(
       currentPosition: currentPosition ?? this.currentPosition,
       favoriteDevices: favoriteDevices ?? this.favoriteDevices,
       shouldCenter: shouldCenter ?? this.shouldCenter,
+      hasPermission: hasPermission ?? this.hasPermission,
     );
   }
 }

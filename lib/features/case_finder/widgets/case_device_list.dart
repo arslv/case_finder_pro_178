@@ -6,7 +6,6 @@ import 'package:pod_finder_pro_178/gen/assets.gen.dart';
 import '../../../core/models/device.dart';
 import '../../../core/theme/app_colors.dart';
 import '../presentation/bloc/case_finder_bloc.dart';
-import '../presentation/bloc/case_finder_event.dart';
 import '../../finder/presentation/widgets/help_panel.dart';
 import '../../finder/presentation/screens/device_tracking_screen.dart';
 

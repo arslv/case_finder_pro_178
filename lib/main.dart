@@ -1,17 +1,18 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/navigation/app_navigator.dart';
 import 'core/navigation/app_routes.dart';
 import 'core/theme/app_colors.dart';
-import 'core/services/hive/hive_init.dart';
+import 'core/services/hive/hive_servie.dart';
+import 'core/theme/app_theme.dart';
 import 'features/main/presentation/bloc/main_screen_bloc.dart';
 import 'features/onboarding/presentation/bloc/onboarding_bloc.dart';
 import 'features/favorites/presentation/bloc/favorites_bloc.dart';
 import 'core/di/service_locator.dart';
 import 'features/case_finder/presentation/bloc/case_finder_bloc.dart';
+import 'features/paywall/bloc/main_paywall_bloc.dart';
 import 'core/services/geolocation/geolocation_service.dart';
 
 void main() async {
@@ -20,7 +21,7 @@ void main() async {
   await HiveService().init();
   await _initLocationServices();
   await _initSystemSettings();
-  
+
   runApp(const MyApp());
 }
 
@@ -66,19 +67,28 @@ class MyApp extends StatelessWidget {
         BlocProvider<FavoritesBloc>(
           create: (_) => FavoritesBloc(),
         ),
+        BlocProvider<MainPaywallBloc>(
+          create: (_) => MainPaywallBloc(),
+        ),
       ],
-      child: CupertinoApp(
-        theme: const CupertinoThemeData(
-          primaryColor: AppColors.primary,
-          brightness: Brightness.light,
-          textTheme: CupertinoTextThemeData(
-            primaryColor: AppColors.primary,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: theme,
+        home: Builder(
+          builder: (context) => CupertinoApp(
+            theme: const CupertinoThemeData(
+              primaryColor: AppColors.primary,
+              brightness: Brightness.light,
+              textTheme: CupertinoTextThemeData(
+                primaryColor: AppColors.primary,
+              ),
+            ),
+            navigatorKey: AppNavigator.navigatorKey,
+            onGenerateRoute: AppNavigator.onGenerateRoute,
+            initialRoute: AppRoutes.onboarding,
+            debugShowCheckedModeBanner: false,
           ),
         ),
-        navigatorKey: AppNavigator.navigatorKey,
-        onGenerateRoute: AppNavigator.onGenerateRoute,
-        initialRoute: AppRoutes.onboarding,
-        debugShowCheckedModeBanner: false,
       ),
     );
   }
